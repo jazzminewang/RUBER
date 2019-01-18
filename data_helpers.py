@@ -10,6 +10,10 @@ def tokenizer(iterator):
         yield value.split()
 
 def load_file(data_dir, fname):
+    print(type(data_dir))
+    print(data_dir)
+    print(type(fname))
+    print(fname)
     fname = os.path.join(data_dir, fname)
     print 'Loading file %s'%(fname)
     lines = open(fname).readlines()
@@ -132,8 +136,10 @@ def load_word2vec(data_dir, fword2vec):
 if __name__ == '__main__':
     data_dir = './data/'
     query_max_length, reply_max_length = [20, 30]
-    fquery, freply = []
-    fqword2vec, frword2vec = []
+    fquery = [] 
+    freply = []
+    fqword2vec = 'GoogleNews-vectors-negative300.bin'
+    frword2vec = 'GoogleNews-vectors-negative300.bin'
 
     process_train_file(data_dir, fquery, query_max_length)
     process_train_file(data_dir, freply, reply_max_length)

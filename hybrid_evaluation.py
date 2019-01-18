@@ -47,8 +47,11 @@ if __name__ == '__main__':
     train_dir = ''
     data_dir = 'data/'
     qmax_length, rmax_length = [20, 30]
-    fquery, freply = []
-    frword2vec = ''
+    fquery = [] 
+    freply = []
+
+    # to do - insert word2vec txt file?
+    frword2vec = 'GoogleNews-vectors-negative300.bin'
 
     hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
     """test"""
