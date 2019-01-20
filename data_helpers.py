@@ -130,16 +130,21 @@ def load_word2vec(data_dir, fword2vec):
         size, vec_dim = map(int, fin.readline().split())
         for line in fin:
             ps = line.rstrip().split()
+            # print(ps[1:])
             vecs[ps[0]] = map(float, ps[1:])
     return vecs, vec_dim, size
 
 if __name__ == '__main__':
     data_dir = './data/'
     query_max_length, reply_max_length = [20, 30]
-    fquery = [] 
-    freply = []
-    fqword2vec = 'GoogleNews-vectors-negative300.bin'
-    frword2vec = 'GoogleNews-vectors-negative300.bin'
+
+    # not sure what needs to go in here.. path to the query/response txt files?
+    fquery = 'How are you?'
+    freply = 'Fine.'
+
+    # is it expecting a binary file for word2vec? -> have it too but i put a txt file
+    fqword2vec = 'GoogleNews-vectors-negative300.txt'
+    frword2vec = 'GoogleNews-vectors-negative300.txt'
 
     process_train_file(data_dir, fquery, query_max_length)
     process_train_file(data_dir, freply, reply_max_length)
