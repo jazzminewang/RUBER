@@ -4,6 +4,7 @@ import os
 import cPickle
 import numpy as np
 from tensorflow.contrib import learn
+from pathlib import Path
 
 def tokenizer(iterator):
     for value in iterator:
@@ -60,7 +61,7 @@ def load_data(data_dir, fname, max_length):
     Read id file data
 
     Return:
-        data list: [[length, [token_ids]]]
+        data list: [[length of vector (represents 1 sentence), [token_ids in that sentence]]]
     """
     fname = os.path.join(data_dir, "%s.id%d"%(fname, max_length))
     print 'Loading data from %s'%fname
@@ -108,6 +109,8 @@ def make_embedding_matrix(data_dir, fname, word2vec, vec_dim, fvocab):
     vocab_str = load_file(data_dir, fvocab)
     print 'Saving embedding matrix in %s'%foutput
     matrix=[]
+
+    # creating embedding matrix from word2vec. WOAH!
     for vocab in vocab_str:
         vec = word2vec[vocab] if vocab in word2vec \
                 else [0.0 for _ in range(vec_dim)]
@@ -134,15 +137,50 @@ def load_word2vec(data_dir, fword2vec):
             vecs[ps[0]] = map(float, ps[1:])
     return vecs, vec_dim, size
 
+def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
+    """
+    Return:
+        file path to file with all queries
+        file path to file with all replies
+    """
+    fquery_filename = os.path.join(data_dir, persona_chat_dir, "queries.txt")
+    freply_filename = os.path.join(data_dir, persona_chat_dir, "replies.txt")
+    fquery_file = Path(fquery_filename)
+    freply_file = Path(freply_filename)
+
+    fquery_filename_short = os.path.join(persona_chat_dir, "queries.txt")
+    freply_filename_short = os.path.join(persona_chat_dir, "replies.txt")
+
+    if not fquery_file.exists() and not freply_file.exists():
+        print("Creating queries and replies dataset")
+        directory = os.path.join(data_dir, persona_chat_dir)
+        for data_filename in os.listdir(directory):
+            if "cands" not in data_filename:
+                data_filename = os.path.join(data_dir, persona_chat_dir, data_filename)
+                print(data_filename)
+                # parse files with 
+                with open(data_filename, "r") as datafile, open(fquery_filename, "w+") as queries, open(freply_filename, "w+") as replies:
+                    is_query = True
+                    for line in datafile:
+                        # skip context
+                        if "persona" not in line:
+                            if is_query:
+                                queries.write(line + "\n")
+                            else:
+                                replies.write(line + "\n")
+                            is_query = not is_query
+        
+    return fquery_filename_short, freply_filename_short
+
+# Run this first to create the embedding matrix ? 
 if __name__ == '__main__':
     data_dir = './data/'
     query_max_length, reply_max_length = [20, 30]
 
-    # not sure what needs to go in here.. path to the query/response txt files?
-    fquery = 'How are you?'
-    freply = 'Fine.'
+    # Specific to Persona Chat dataset
+    fquery, freply = parse_persona_chat_dataset(data_dir)
 
-    # is it expecting a binary file for word2vec? -> have it too but i put a txt file
+    # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 

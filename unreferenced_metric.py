@@ -142,18 +142,22 @@ class Unreferenced():
                 losses = margin - self.pos_score + self.neg_score
                 # make loss >= 0
                 losses = tf.clip_by_value(losses, 0.0, 100.0)
-                self.loss = tf.reduce_mean(losses)
+                self.loss = tf.reduce_mean(losses) # self.loss = tensor
                 # optimizer
                 self.learning_rate = tf.Variable(init_learning_rate,
                         trainable=False, name="learning_rate")
                 self.learning_rate_decay_op = \
                     self.learning_rate.assign(self.learning_rate*0.99)
+                
+                # ADAM backprop as mentioned in paper
                 optimizer = tf.train.AdamOptimizer(self.learning_rate)
                 self.global_step = tf.Variable(0, trainable=False,
                         name="global_step")
                 # training op
                 with tf.device('/gpu:1'):
-                    self.train_op = optimizer.minimize(self.loss, self.global_step)
+                    self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
+                    # global step is just a count of how many times the variables have been updated
+                    
                 # checkpoint saver
                 self.saver = tf.train.Saver(tf.global_variables())
                 # write summary
@@ -196,14 +200,21 @@ class Unreferenced():
             self.training : training}
 
     def train_step(self, queries, replies, data_size, batch_size):
+        # data_size = # of queries
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
+
+                # idx uniquely identifies --> #TODO: figure out persona chat dataset
+
         negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size)
         # compute sample loss and do optimize
+
         feed_dict = self.make_input_feed(query_batch, query_sizes,
                 reply_batch, reply_sizes, negative_reply_batch, neg_reply_sizes)
+
+        # 
         output_feed = [self.global_step, self.train_op, self.loss]
         step, _, loss = self.session.run(output_feed, feed_dict)
 
@@ -211,7 +222,7 @@ class Unreferenced():
 
     def init_model(self):
         """
-        Initilize all variables or load model from checkpoint
+        Initialize all variables or load model from checkpoint
         """
         ckpt = tf.train.get_checkpoint_state(self.train_dir)
         if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
@@ -232,13 +243,14 @@ class Unreferenced():
 
             checkpoint_path = os.path.join(self.train_dir, "unref.model")
             loss = 0.0
-            prev_losses = [1.0]
-            while True:
+            prev_losses = [1.0] # why is this 1?
+            while True: # trains forever (you can also train until convergence)
                 step, l = self.train_step(queries, replies, data_size, batch_size)
-                loss += l
+                loss += l  # why adding loss instead of replacing it? 
+
                 # save checkpoint
                 if step % steps_per_checkpoint == 0:
-                    loss /= steps_per_checkpoint
+                    loss /= steps_per_checkpoint # avg loss per step
                     print ("global_step %d, loss %f, learning rate %f"  \
                             %(step, loss, self.learning_rate.eval()))
 

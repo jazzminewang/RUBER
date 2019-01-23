@@ -15,7 +15,7 @@ class Hybrid():
             ref_method='max_min',
             gru_units=128, mlp_units=[256, 512, 128]
         ):
-        # print("Initializing referenced model")
+        # print("Initializing referenced model") --> too much for cpu :()
         # self.ref=Referenced(data_dir, frword2vec, ref_method)
         print("Initializing unreferenced model")
         self.unref=Unreferenced(qmax_length, rmax_length,
@@ -73,3 +73,8 @@ if __name__ == '__main__':
 
     """train"""
     hybrid.train_unref(data_dir, fquery, freply)
+
+
+# 1. go to datahelpers, change their files. restructure data.
+# 2. run train for unref metric --> checkpoint file. 
+# 3. run inference. 
