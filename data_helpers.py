@@ -155,7 +155,7 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
         print("Creating queries and replies dataset")
         directory = os.path.join(data_dir, persona_chat_dir)
         for data_filename in os.listdir(directory):
-            if "cands" not in data_filename:
+            if "no_cands" in data_filename and "revised" in data_filename:
                 data_filename = os.path.join(data_dir, persona_chat_dir, data_filename)
                 print(data_filename)
                 # parse files with 
@@ -163,6 +163,7 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
                     is_query = True
                     for line in datafile:
                         # skip context
+                        # looks like | is a new sentence. 
                         if "persona" not in line:
                             if is_query:
                                 queries.write(line + "\n")
