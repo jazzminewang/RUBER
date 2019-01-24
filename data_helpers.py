@@ -171,7 +171,7 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
 
                         if l1 == "" or l2 == "":
                             if l1 != "" and l2 == "":
-                                replies.write(l1 + "\n")
+                               replies.write(l1) 
                             break
 
                         if "persona" in l1 and "persona" in l2:
@@ -182,32 +182,32 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
                                 #l2 is starting a new conversation! l2 is query only.
                                 print("l2 is query")
                                 new_conversation = False
-                                queries.write(l2 + "\n")
+                                queries.write(l2) 
                             elif "persona" not in l1 and "persona" not in l2 and new_conversation:
                                 #l1 is starting a new conversation! 
                                 print("l1 is query")
-                                queries.write(l1 + "\n")
-                                replies.write(l2 + "\n")
-                                queries.write(l2 + "\n")
+                                queries.write(l1)
+                                replies.write(l2)
+                                queries.write(l2)
                                 new_conversation = False
                             elif "persona" not in l1 and "persona" not in l2:
                                 #part of an old conversation, but check if it terminates
-                                replies.write(l1 + "\n")
-                                queries.write(l1 + "\n")
-                                replies.write(l2 + "\n")
+                                replies.write(l1)
+                                queries.write(l1)
+                                replies.write(l2)
 
                                 position = datafile.tell()
                                 check_line = datafile.readline()
                                 # if the next line doesn't start a new conversation, store l2 as query also
                                 if "persona" not in check_line:
                                     print("both lines in conversation")
-                                    queries.write(l2 + "\n")
+                                    queries.write(l2)
                                 else:
                                     print("last sentence in conversation: " + l2)
                                     new_conversation = True
                                 datafile.seek(position)
                             elif "persona" not in l1 and "persona" in l2:
-                                replies.write(l1 + "\n")
+                                replies.write(l1)
                                 print("last sentence in conversation: " + l1)
                                 new_conversation = True
 

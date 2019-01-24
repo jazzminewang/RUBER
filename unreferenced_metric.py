@@ -182,14 +182,16 @@ class Unreferenced():
         """
         if not idx:
             idx=[random.randint(0, data_size-1) for _ in range(batch_size)]
-        print("idx[0]")
-        print(idx[0])
-        print("data[0]")
-        print(data[0])
-        print("data[0][1]")
-        print(data[0][1])
-        ids = [data[i][1] for i in idx]
-        lens = [data[i][0] for i in idx]
+        try:
+	    ids = [data[i][1] for i in idx]
+        except IndexError as e:
+            print("number of indices in data")
+	    print(len(data)) 
+	    print(i) 
+	    print("this index did not exist in data")
+	    print(data[i])
+	    print(len(data))
+	lens = [data[i][0] for i in idx]
         return ids, lens, idx
 
     def make_input_feed(self, query_batch, qsizes, reply_batch, rsizes,
