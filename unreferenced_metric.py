@@ -196,8 +196,12 @@ class Unreferenced():
 
     def make_input_feed(self, query_batch, qsizes, reply_batch, rsizes,
             neg_batch=None, neg_sizes=None, training=True):
-        if not neg_batch:
-            reply_batch += neg_batch
+        if neg_batch:
+
+
+
+
+	    reply_batch += neg_batch
             rsizes += neg_sizes
             query_batch += query_batch
             qsizes += qsizes
@@ -209,7 +213,12 @@ class Unreferenced():
 
     def train_step(self, queries, replies, data_size, batch_size):
         # data_size = # of queries
+
+
+        
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
+       
+
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
 
@@ -218,9 +227,9 @@ class Unreferenced():
         negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size)
         # compute sample loss and do optimize
-        print("negative reply batch length ")
-        print(len(negative_reply_batch))
-        print(neg_reply_sizes)
+        
+       
+      
 
         feed_dict = self.make_input_feed(query_batch, query_sizes,
                 reply_batch, reply_sizes, negative_reply_batch, neg_reply_sizes)
