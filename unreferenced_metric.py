@@ -197,11 +197,7 @@ class Unreferenced():
     def make_input_feed(self, query_batch, qsizes, reply_batch, rsizes,
             neg_batch=None, neg_sizes=None, training=True):
         if neg_batch:
-
-
-
-
-	    reply_batch += neg_batch
+	        reply_batch += neg_batch
             rsizes += neg_sizes
             query_batch += query_batch
             qsizes += qsizes
