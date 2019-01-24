@@ -15,8 +15,8 @@ class Hybrid():
             ref_method='max_min',
             gru_units=128, mlp_units=[256, 512, 128]
         ):
-        # print("Initializing referenced model") --> too much for cpu :()
-        # self.ref=Referenced(data_dir, frword2vec, ref_method)
+        print("Initializing referenced model")
+        self.ref=Referenced(data_dir, frword2vec, ref_method)
         print("Initializing unreferenced model")
         self.unref=Unreferenced(qmax_length, rmax_length,
                 os.path.join(data_dir,fqembed),
@@ -25,6 +25,7 @@ class Hybrid():
                 train_dir=train_dir)
 
     def train_unref(self, data_dir, fquery, freply):
+        print("training unreferenced metric")
         self.unref.train(data_dir, fquery, freply)
 
     def normalize(self, scores):
@@ -46,15 +47,16 @@ class Hybrid():
         return [min(a,b) for a,b in zip(ref_scores, unref_scores)]
 
 if __name__ == '__main__':
-    train_dir = 'data/data'
+    train_dir = 'data'
     data_dir = 'data'
     qmax_length, rmax_length = [20, 30]
 
     # fquery = [] 
     # freply = []
+
     # embedding matrix file for query and reply
-    fquery = "How are you?"
-    freply = "I'm okay, a bit sick."
+    fquery = "personachat/queries.txt"
+    freply = "personachat/replies.txt"
 
     # to do - insert word2vec txt file?
     frword2vec = 'GoogleNews-vectors-negative300.txt'
@@ -64,7 +66,7 @@ if __name__ == '__main__':
     """test"""
     out_file='word2vec_out'
 
-    print("Getting scores")
+    # print("Getting scores")
 #    scores = hybrid.unref.scores(data_dir, '%s.sub'%fquery, '%s.sub'%freply, "%s.vocab%d"%(fquery,qmax_length), "%s.vocab%d"%(freply, rmax_length))
     # scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, out_file, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
     # for i, s in enumerate(scores):

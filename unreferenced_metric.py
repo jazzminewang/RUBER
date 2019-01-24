@@ -182,6 +182,12 @@ class Unreferenced():
         """
         if not idx:
             idx=[random.randint(0, data_size-1) for _ in range(batch_size)]
+        print("idx[0]")
+        print(idx[0])
+        print("data[0]")
+        print(data[0])
+        print("data[0][1]")
+        print(data[0][1])
         ids = [data[i][1] for i in idx]
         lens = [data[i][0] for i in idx]
         return ids, lens, idx
@@ -201,7 +207,9 @@ class Unreferenced():
 
     def train_step(self, queries, replies, data_size, batch_size):
         # data_size = # of queries
+        print("getting query batch")
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
+        print("getting reply batch")
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
 
@@ -237,6 +245,7 @@ class Unreferenced():
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
         data_size = len(queries)
+        print("data size is " + str(data_size))
 
         with self.session.as_default():
             self.init_model()

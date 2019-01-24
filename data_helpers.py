@@ -5,6 +5,7 @@ import cPickle
 import numpy as np
 from tensorflow.contrib import learn
 from pathlib import Path
+import time
 
 def tokenizer(iterator):
     for value in iterator:
@@ -160,16 +161,76 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
                 print(data_filename)
                 # parse files with 
                 with open(data_filename, "r") as datafile, open(fquery_filename, "w+") as queries, open(freply_filename, "w+") as replies:
-                    is_query = True
-                    for line in datafile:
-                        # skip context
-                        # looks like | is a new sentence. 
-                        if "persona" not in line:
-                            if is_query:
-                                queries.write(line + "\n")
-                            else:
-                                replies.write(line + "\n")
-                            is_query = not is_query
+                    new_conversation = True
+                    while True: 
+                        # time.sleep(5)
+                        l1 = datafile.readline()
+                        l2 = datafile.readline()
+                        # print(l1)
+                        # print(l2)
+
+                        if l1 == "" or l2 == "":
+                            if l1 != "" and l2 == "":
+                                replies.write(l1 + "\n")
+                            break
+
+                        if "persona" in l1 and "persona" in l2:
+                            print("skipping lines")
+                            continue
+                        else:
+                            if "persona" in l1 and "persona" not in l2:
+                                #l2 is starting a new conversation! l2 is query only.
+                                print("l2 is query")
+                                new_conversation = False
+                                queries.write(l2 + "\n")
+                            elif "persona" not in l1 and "persona" not in l2 and new_conversation:
+                                #l1 is starting a new conversation! 
+                                print("l1 is query")
+                                queries.write(l1 + "\n")
+                                replies.write(l2 + "\n")
+                                queries.write(l2 + "\n")
+                                new_conversation = False
+                            elif "persona" not in l1 and "persona" not in l2:
+                                #part of an old conversation, but check if it terminates
+                                replies.write(l1 + "\n")
+                                queries.write(l1 + "\n")
+                                replies.write(l2 + "\n")
+
+                                position = datafile.tell()
+                                check_line = datafile.readline()
+                                # if the next line doesn't start a new conversation, store l2 as query also
+                                if "persona" not in check_line:
+                                    print("both lines in conversation")
+                                    queries.write(l2 + "\n")
+                                else:
+                                    print("last sentence in conversation: " + l2)
+                                    new_conversation = True
+                                datafile.seek(position)
+                            elif "persona" not in l1 and "persona" in l2:
+                                replies.write(l1 + "\n")
+                                print("last sentence in conversation: " + l1)
+                                new_conversation = True
+
+
+                    # for line in datafile:
+                    #     if "1" is in line:
+                    #         new_conversation = True
+                    #     else:
+                    #         if new_conversation:
+                    #             # only query
+                    #             queries.write(line + "\n")
+                    #         elif :
+                    #             # only reply
+                    #             replies
+                    #         else:
+                    #             replies.write(line + "\n")
+
+                    #     if "persona" not in line:
+                    #         if is_query:
+                    #             queries.write(line + "\n")
+                    #         else:
+                    #             replies.write(line + "\n")
+                    #         is_query = not is_query
         
     return fquery_filename_short, freply_filename_short
 
