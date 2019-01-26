@@ -155,8 +155,11 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
     if not fquery_file.exists() and not freply_file.exists():
         print("Creating queries and replies dataset")
         directory = os.path.join(data_dir, persona_chat_dir)
-        for data_filename in os.listdir(directory):
-            if "no_cands" in data_filename and "revised" in data_filename:
+        
+	for data_filename in os.listdir(directory):
+	    
+            if "train" in data_filename and "no_cand" in data_filename and "revised" in data_filename:
+
                 data_filename = os.path.join(data_dir, persona_chat_dir, data_filename)
                 print(data_filename)
                 # parse files with 
@@ -246,7 +249,7 @@ if __name__ == '__main__':
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
     frword2vec = 'GoogleNews-vectors-negative300.txt'
-
+    print("Processing training files")
     process_train_file(data_dir, fquery, query_max_length)
     process_train_file(data_dir, freply, reply_max_length)
 
