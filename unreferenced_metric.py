@@ -1,4 +1,5 @@
-__author__ = 'liming-vie'
+
+from __future__ import print_function
 
 import os
 import random
@@ -6,6 +7,7 @@ import cPickle
 import numpy as np
 import tensorflow as tf
 import data_helpers
+import pdb
 
 class Unreferenced():
     """Unreferenced Metric
@@ -42,7 +44,7 @@ class Unreferenced():
         self.rmax_length = rmax_length
         random.seed()
 
-        print 'Loading embedding matrix'
+        print('Loading embedding matrix')
         qembed = cPickle.load(open(fqembed, 'rb'))
         rembed = cPickle.load(open(frembed, 'rb'))
 
@@ -82,7 +84,7 @@ class Unreferenced():
                         # [batch_size, sequence_length]
                         shape=[None, self.qmax_length],
                         name="query_inputs")
-                with tf.device('/gpu:1'):
+                with tf.device('/gpu:0'):
                     query_embedding = get_birnn_embedding(
                             self.query_sizes, self.query_inputs,
                             qembed, 'query_rgu_birnn')
@@ -94,7 +96,7 @@ class Unreferenced():
                 self.reply_inputs = tf.placeholder(tf.int32,
                         shape=[None, self.rmax_length],
                         name="reply_inputs")
-                with tf.device('/gpu:1'):
+                with tf.device('/gpu:0'):
                     reply_embedding = get_birnn_embedding(
                         self.reply_sizes, self.reply_inputs,
                         rembed, 'reply_gru_birnn')
@@ -133,13 +135,27 @@ class Unreferenced():
                 self.score = tf.contrib.layers.legacy_fully_connected(
                     inputs_dropout, 1, activation_fn=tf.sigmoid,
                     weight_regularizer=tf.contrib.layers.l2_regularizer(l2_regular))
-                self.score = tf.reshape(self.score, [-1]) # [batch_size]
-
-            # define training related ops
-            with tf.variable_scope('train'):
+		output_output = tf.print(self.score)
+		with tf.control_dependencies([output_output]):
+			self.score = tf.identity(self.score)
+		self.score = tf.reshape(self.score, [-1]) # [batch_size]
+		reshape_output = tf.print(self.score)
+		with tf.control_dependencies([reshape_output]):
+    			self.score = tf.identity(self.score)
+	    # define training related ops
+	with tf.variable_scope('train'):
+		
                 # calculate losses
-                self.pos_score, self.neg_score = tf.split(self.score, 2)
-                losses = margin - self.pos_score + self.neg_score
+		presplit_output = tf.print(self.score)
+               
+		with tf.control_dependencies([presplit_output]):
+			self.score = tf.identity(self.score)
+		train_scope_print = tf.print(self.score)
+		#self.pos_score, self.neg_score = tf.split(self.score, 2)
+		self.pos_score = self.score #for inference, only need the positive score (no negative sampling needed)
+		print("successfully split")
+                """
+		losses = margin - self.pos_score + self.neg_score
                 # make loss >= 0
                 losses = tf.clip_by_value(losses, 0.0, 100.0)
                 self.loss = tf.reduce_mean(losses) # self.loss = tensor
@@ -154,16 +170,18 @@ class Unreferenced():
                 self.global_step = tf.Variable(0, trainable=False,
                         name="global_step")
                 # training op
-                with tf.device('/gpu:1'):
+                with tf.device('/gpu:0'):
                     self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
                     # global step is just a count of how many times the variables have been updated
-                    
+                """
                 # checkpoint saver
                 self.saver = tf.train.Saver(tf.global_variables())
                 # write summary
                 self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),
                         self.session.graph)
                 self.summary = tf.Summary()
+		print(self.summary)
+	
 
     def get_batch(self, data, data_size, batch_size, idx=None):
         """
@@ -254,7 +272,7 @@ class Unreferenced():
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
         data_size = len(queries)
         print("data size is " + str(data_size))
-
+        print_score = tf.print(self.score)
         with self.session.as_default():
             self.init_model()
 
@@ -285,9 +303,9 @@ class Unreferenced():
                     reply_batch, reply_sizes, idx = self.get_batch(replies, data_size, 10, idx)
                     input_feed = self.make_input_feed(query_batch, query_sizes, reply_batch, reply_sizes, training=False)
                     score, tests = self.session.run([self.pos_score, self.test], input_feed)
-                    print '-------------'
+                    print('-------------')
                     for s, t in zip(score[:10], tests[:10]):
-                        print s, t
+                        print( s, t)
  #                   """
 
     def scores(self, data_dir, fquery, freply, fqvocab, frvocab, init=False):
@@ -311,8 +329,8 @@ class Unreferenced():
                 feed_dict = self.make_input_feed([qids], [ql], [rids], [rl], training=False)
                 score = self.session.run(self.pos_score, feed_dict)
                 scores.append(score[0])
-            """ Debug
+            """ Debug """
             for i, s in enumerate(scores):
-                print i,s
-            """
+                print (i,s)
+            
         return scores

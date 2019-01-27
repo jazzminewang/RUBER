@@ -3,6 +3,7 @@ __author__ = 'liming-vie'
 import os
 from referenced_metric import Referenced
 from unreferenced_metric import Unreferenced
+import numpy as np
 
 class Hybrid():
     def __init__(self,
@@ -32,19 +33,24 @@ class Hybrid():
         smin = min(scores)
         smax = max(scores)
         diff = smax - smin
-        ret = [(s - smin) / diff for s in scores]
+	# normalize to [0-2] instead to fit RUBER human scores
+        ret = [2*(s - smin) / diff for s in scores]
         return ret
 
     def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab):
-        ref_scores = self.ref.scores(data_dir, freply, fgenerated)
+        print("Getting referenced scores")
+	ref_scores = self.ref.scores(data_dir, freply, fgenerated)
         ref_scores = self.normalize(ref_scores)
 
+	print("Got referenced scores")
+	print(ref_scores)
+	print("Getting unreferenced scores")
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
                 fqvocab, frvocab)
-        unref_socres = self.normalize(unref_scores)
-
-        #heuristic used is minimum
-        return [min(a,b) for a,b in zip(ref_scores, unref_scores)]
+        unref_scores = self.normalize(unref_scores)
+	print("Got unreferenced scores")
+        #heuristic used is minimum - changed to arithmetic mean
+        return [np.mean([a,b]) for a,b in zip(ref_scores, unref_scores)]
 
 if __name__ == '__main__':
     train_dir = 'data'
@@ -64,17 +70,16 @@ if __name__ == '__main__':
     print("Initializing Hybrid object")
     hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
     """test"""
-    out_file='word2vec_out'
-
-    """ print("Getting scores")
+    
+    print("Getting scores")
     scores = hybrid.unref.scores(data_dir, '%s.sub'%fquery, '%s.sub'%freply, "%s.vocab%d"%(fquery,qmax_length), "%s.vocab%d"%(freply, rmax_length))
-    scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, out_file, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
+    scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
     for i, s in enumerate(scores):
         print i,s
     print 'avg:%f'%(sum(scores)/len(scores))
-"""
+   
     """train"""
-    hybrid.train_unref(data_dir, fquery, freply)
+    #hybrid.train_unref(data_dir, fquery, freply)
 
 
 # 1. go to datahelpers, change their files. restructure data.

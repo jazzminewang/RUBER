@@ -12,10 +12,10 @@ def tokenizer(iterator):
         yield value.split()
 
 def load_file(data_dir, fname):
-    print(type(data_dir))
-    print(data_dir)
-    print(type(fname))
-    print(fname)
+    
+   
+  
+ 
     fname = os.path.join(data_dir, fname)
     print 'Loading file %s'%(fname)
     lines = open(fname).readlines()
