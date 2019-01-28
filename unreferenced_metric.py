@@ -200,15 +200,7 @@ class Unreferenced():
         """
         if not idx:
             idx=[random.randint(0, data_size-1) for _ in range(batch_size)]
-        try:
-	    ids = [data[i][1] for i in idx]
-        except IndexError as e:
-            print("number of indices in data")
-	    print(len(data)) 
-	    print(i) 
-	    print("this index did not exist in data")
-	    print(data[i])
-	    print(len(data))
+	ids = [data[i][1] for i in idx]
 	lens = [data[i][0] for i in idx]
         return ids, lens, idx
 

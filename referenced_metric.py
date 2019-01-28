@@ -1,8 +1,9 @@
 __author__ = 'liming-vie'
-
+import string
 import math
 import numpy as np
 import data_helpers
+import scipy as sp
 
 class Referenced():
     """Referenced Metric
@@ -31,13 +32,18 @@ class Referenced():
         return [1e-10 for _ in xrange(self.vec_dim)]
 
     def __vector(self, word):
-        return self.word2vec[word] if word in self.word2vec \
-                else self.__zeroes_vector()
-
+	if word in self.word2vec:
+	    return self.word2vec[word]
+	else:
+	    print("Word2vec does not contain " + word)
+	    return self.__zeroes_vector()
+    
     def sentence_vector(self, sentence):
         sentence = sentence.rstrip().split()
-        ret = [self.__vector(word) for word in sentence]
+	table = string.maketrans("", "")
+        ret = [self.__vector(word.translate(table, string.punctuation)) for word in sentence]
         if len(ret) == 0:
+	    print(sentence + " does not have ret array")
             return [self.__zeroes_vector()]
         return ret
 
@@ -46,6 +52,8 @@ class Referenced():
         maxp = [max([vec[i] for vec in svector]) for i in range(self.vec_dim)]
         minp = [min([vec[i] for vec in svector]) for i in range(self.vec_dim)]
         return np.concatenate((maxp, minp), axis=0)
+
+
 
     def average_pooling(self, sentence):
         svector = self.sentence_vector(sentence)
@@ -61,6 +69,8 @@ class Referenced():
         v2=list(self.pooling(generated))
         a=sum(v1[i]*v2[i] for i in range(len(v1)))
         b=math.sqrt(sum(i**2 for i in v1)) * math.sqrt(sum(i**2 for i in v2))
+	print("a/b is " + str(a/b))
+	print("cosine library is " + str(sp.spatial.distance.cosine(v1, v2)))
         return a/b
 
     def scores(self, data_dir, fgroundtruth, fgenerated):

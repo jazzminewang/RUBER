@@ -29,27 +29,37 @@ class Hybrid():
         print("training unreferenced metric")
         self.unref.train(data_dir, fquery, freply)
 
-    def normalize(self, scores):
-        smin = min(scores)
-        smax = max(scores)
-        diff = smax - smin
+    def normalize(self, scores, smin=None, smax=None, coefficient=None):
+        if not smin and not smax:
+	    smin = min(scores)
+            smax = max(scores)
+            diff = smax - smin
 	# normalize to [0-2] instead to fit RUBER human scores
-        ret = [2*(s - smin) / diff for s in scores]
+        else:
+	    smin = smin
+	    diff = smax - smin
+        if coefficient:
+	    ret = [2 * (s - smin) / diff for s in scores]
+	else:
+	    ret = [(s - smin) / diff for s in scores]
         return ret
 
     def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab):
-        print("Getting referenced scores")
 	ref_scores = self.ref.scores(data_dir, freply, fgenerated)
-        ref_scores = self.normalize(ref_scores)
-
-	print("Got referenced scores")
+	print("unnormalized metric scores: ")
 	print(ref_scores)
-	print("Getting unreferenced scores")
+        ref_scores = self.normalize(ref_scores,smin=0, smax=1, coefficient=2)
+	print("referenced metric scores: ")
+	print(ref_scores)
+
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
                 fqvocab, frvocab)
+	print("unnormalized unreferenced scores: ")
+	print(unref_scores)
         unref_scores = self.normalize(unref_scores)
-	print("Got unreferenced scores")
         #heuristic used is minimum - changed to arithmetic mean
+	print("unreferenced metric scores: ")
+	print(unref_scores)
         return [np.mean([a,b]) for a,b in zip(ref_scores, unref_scores)]
 
 if __name__ == '__main__':
