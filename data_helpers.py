@@ -4,12 +4,18 @@ import os
 import cPickle
 import numpy as np
 from tensorflow.contrib import learn
+from pathlib import Path
+import time
 
 def tokenizer(iterator):
     for value in iterator:
         yield value.split()
 
 def load_file(data_dir, fname):
+    
+   
+  
+ 
     fname = os.path.join(data_dir, fname)
     print 'Loading file %s'%(fname)
     lines = open(fname).readlines()
@@ -56,7 +62,7 @@ def load_data(data_dir, fname, max_length):
     Read id file data
 
     Return:
-        data list: [[length, [token_ids]]]
+        data list: [[length of vector (represents 1 sentence), [token_ids in that sentence]]]
     """
     fname = os.path.join(data_dir, "%s.id%d"%(fname, max_length))
     print 'Loading data from %s'%fname
@@ -104,6 +110,8 @@ def make_embedding_matrix(data_dir, fname, word2vec, vec_dim, fvocab):
     vocab_str = load_file(data_dir, fvocab)
     print 'Saving embedding matrix in %s'%foutput
     matrix=[]
+
+    # creating embedding matrix from word2vec. WOAH!
     for vocab in vocab_str:
         vec = word2vec[vocab] if vocab in word2vec \
                 else [0.0 for _ in range(vec_dim)]
@@ -126,15 +134,122 @@ def load_word2vec(data_dir, fword2vec):
         size, vec_dim = map(int, fin.readline().split())
         for line in fin:
             ps = line.rstrip().split()
+            # print(ps[1:])
             vecs[ps[0]] = map(float, ps[1:])
     return vecs, vec_dim, size
 
+def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
+    """
+    Return:
+        file path to file with all queries
+        file path to file with all replies
+    """
+    fquery_filename = os.path.join(data_dir, persona_chat_dir, "queries.txt")
+    freply_filename = os.path.join(data_dir, persona_chat_dir, "replies.txt")
+    fquery_file = Path(fquery_filename)
+    freply_file = Path(freply_filename)
+
+    fquery_filename_short = os.path.join(persona_chat_dir, "queries.txt")
+    freply_filename_short = os.path.join(persona_chat_dir, "replies.txt")
+
+    if not fquery_file.exists() and not freply_file.exists():
+        print("Creating queries and replies dataset")
+        directory = os.path.join(data_dir, persona_chat_dir)
+        
+	for data_filename in os.listdir(directory):
+	    
+            if "train" in data_filename and "no_cand" in data_filename and "revised" in data_filename:
+
+                data_filename = os.path.join(data_dir, persona_chat_dir, data_filename)
+                print(data_filename)
+                # parse files with 
+                with open(data_filename, "r") as datafile, open(fquery_filename, "w+") as queries, open(freply_filename, "w+") as replies:
+                    new_conversation = True
+                    queries_line_count = 0
+                    replies_line_count = 0
+
+                    while True: 
+                        # time.sleep(5)
+                        l1 = datafile.readline()
+                        l2 = datafile.readline()
+                        # print(l1)
+                        # print(l2)
+
+                        if (queries_line_count - replies_line_count) > 1:
+                            difference = queries_line_count - replies_line_count
+                            print(str(difference) + " more query lines than reply" )
+
+                        if l1 == "" or l2 == "":
+                            if l1 != "" and l2 == "":
+                               replies.write(l1) 
+                            break
+
+                        if "persona:" in l1 and "persona:" in l2:
+                            continue
+                        else:
+                            # cases:
+                            # 1. persona description, query
+                            # 2. persona description, persona description (above)
+                            # 3. reply, query. reply.
+                                # a. if next sentence if a persona, then finish.
+                                # b. if not, reply #2 is also a query.
+                            # 4. reply, persona description.
+
+                            if "persona:" in l1 and "persona:" not in l2:
+                                #l2 is starting a new conversation! l2 is query only.
+                                print("l2 is query")
+                                new_conversation = False
+                                queries.write(l2) 
+                                queries_line_count += 1
+                            elif "persona:" not in l1 and "persona:" not in l2 and new_conversation:
+                                #l1 is starting a new conversation! 
+                                print("l1 is query, l2 is response + query")
+                                queries.write(l1)
+                                replies.write(l2)                                
+                                queries.write(l2)
+                                queries_line_count += 2
+                                replies_line_count += 1
+                                new_conversation = False
+                            elif "persona:" not in l1 and "persona:" not in l2:
+                                #part of an old conversation, but check if it terminates
+                                print("l1 is response + query, l2 is response")
+                                replies.write(l1)
+                                queries.write(l1)
+                                replies.write(l2)
+                                queries_line_count += 1
+                                replies_line_count += 2
+
+                                position = datafile.tell()
+                                check_line = datafile.readline()
+                                # if the next line doesn't start a new conversation, store l2 as query also
+                                if "persona:" not in check_line:
+                                    print("l2 is also query")
+                                    queries.write(l2)
+                                    queries_line_count +=1
+                                else:
+                                    print("l2 is last sentence in conversation")
+                                    new_conversation = True
+                                datafile.seek(position)
+                            elif "persona:" not in l1 and "persona:" in l2:
+                                print("l1 is last sentence in conversation")
+                                replies.write(l1)
+                                replies_line_count +=1
+                                new_conversation = True
+        
+    return fquery_filename_short, freply_filename_short
+
+# Run this first to create the embedding matrix ? 
 if __name__ == '__main__':
     data_dir = './data/'
     query_max_length, reply_max_length = [20, 30]
-    fquery, freply = []
-    fqword2vec, frword2vec = []
 
+    # Specific to Persona Chat dataset
+    fquery, freply = parse_persona_chat_dataset(data_dir)
+
+    # Path to word2vec weights
+    fqword2vec = 'GoogleNews-vectors-negative300.txt'
+    frword2vec = 'GoogleNews-vectors-negative300.txt'
+    print("Processing training files")
     process_train_file(data_dir, fquery, query_max_length)
     process_train_file(data_dir, freply, reply_max_length)
 
