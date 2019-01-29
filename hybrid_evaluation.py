@@ -71,8 +71,8 @@ if __name__ == '__main__':
     # freply = []
 
     # embedding matrix file for query and reply
-    fquery = "personachat/queries.txt"
-    freply = "personachat/replies.txt"
+    fquery = "personachat/validation_personachat/queries_validation.txt"
+    freply = "personachat/validation_personachat/replies_validation.txt"
 
     # to do - insert word2vec txt file?
     frword2vec = 'GoogleNews-vectors-negative300.txt'
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     """test"""
     
     print("Getting scores")
-    scores = hybrid.unref.scores(data_dir, '%s.sub'%fquery, '%s.sub'%freply, "%s.vocab%d"%(fquery,qmax_length), "%s.vocab%d"%(freply, rmax_length))
+    #scores = hybrid.unref.scores(data_dir, '%s.sub'%fquery, '%s.sub'%freply, "%s.vocab%d"%(fquery,qmax_length), "%s.vocab%d"%(freply, rmax_length))
     scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
     for i, s in enumerate(scores):
         print i,s
