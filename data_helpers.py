@@ -240,12 +240,13 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
 
 # Run this first to create the embedding matrix ? 
 if __name__ == '__main__':
-    data_dir = './data/'
+    data_dir = './data'
     query_max_length, reply_max_length = [20, 30]
 
     # Specific to Persona Chat dataset
-    fquery, freply = parse_persona_chat_dataset(data_dir)
-
+    #fquery, freply = parse_persona_chat_dataset(data_dir)
+    fquery = "personachat/validation_personachat/queries_validation.txt"
+    freply = "personachat/validation_personachat/replies_validation.txt"
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
     frword2vec = 'GoogleNews-vectors-negative300.txt'

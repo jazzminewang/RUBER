@@ -4,6 +4,9 @@ import os
 from referenced_metric import Referenced
 from unreferenced_metric import Unreferenced
 import numpy as np
+import sys
+import csv
+from numpy import median, mean
 
 class Hybrid():
     def __init__(self,
@@ -39,55 +42,64 @@ class Hybrid():
 	    smin = smin
 	    diff = smax - smin
         if coefficient:
-	    ret = [2 * (s - smin) / diff for s in scores]
+	        ret = [coefficient * (s - smin) / diff for s in scores]
 	else:
 	    ret = [(s - smin) / diff for s in scores]
         return ret
 
     def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab):
-	ref_scores = self.ref.scores(data_dir, freply, fgenerated)
-	print("unnormalized metric scores: ")
-	print(ref_scores)
-        ref_scores = self.normalize(ref_scores,smin=0, smax=1, coefficient=2)
-	print("referenced metric scores: ")
-	print(ref_scores)
-
+        ref_scores = self.ref.scores(data_dir, freply, fgenerated)
+        norm_ref_scores = self.normalize(ref_scores, coefficient=2)
+        
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
                 fqvocab, frvocab)
-	print("unnormalized unreferenced scores: ")
-	print(unref_scores)
-        unref_scores = self.normalize(unref_scores)
-        #heuristic used is minimum - changed to arithmetic mean
-	print("unreferenced metric scores: ")
-	print(unref_scores)
-        return [np.mean([a,b]) for a,b in zip(ref_scores, unref_scores)]
+        norm_unref_scores = self.normalize(unref_scores, coefficient=2)
+
+        return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
 
 if __name__ == '__main__':
     train_dir = 'data'
     data_dir = 'data'
     qmax_length, rmax_length = [20, 30]
 
-    # fquery = [] 
-    # freply = []
-
+    """ for validation """
     # embedding matrix file for query and reply
     fquery = "personachat/validation_personachat/queries_validation.txt"
     freply = "personachat/validation_personachat/replies_validation.txt"
+    """ for training """
+    #fquery = "personachat/queries.txt"
+    #freply = "personachat/replies.txt"
 
-    # to do - insert word2vec txt file?
+    """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
     print("Initializing Hybrid object")
     hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
+
     """test"""
-    
     print("Getting scores")
-    #scores = hybrid.unref.scores(data_dir, '%s.sub'%fquery, '%s.sub'%freply, "%s.vocab%d"%(fquery,qmax_length), "%s.vocab%d"%(freply, rmax_length))
-    scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
-    for i, s in enumerate(scores):
-        print i,s
-    print 'avg:%f'%(sum(scores)/len(scores))
    
+    # scores = hybrid.unref.scores(data_dir, '%s.sub'%fquery, '%s.sub'%freply, "%s.vocab%d"%(fquery,qmax_length), "%s.vocab%d"%(freply, rmax_length))
+    scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
+    
+    """write results to CSV"""
+    with open('results' + int(time.time()) + '.csv', 'wb') as csvfile:
+         writer = csv.writer(csvfile, delimiter=',')
+         # Name the columns
+         column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
+         writer.writerow([col for col in column_titles])
+         
+         with open(data_dir + '%s.sub'%fquery, "r") as queries, open(data_dir + '%s.sub'%freply, "r") as scored_replies, open(data_dir + '%s.true.sub'%freply, "r") as true_replies:
+            #Write rows
+            for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in \
+                queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores:
+                writer.writerow([query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score])
+    csvfile.close()
+
+    print("max score: {}, min score: {}, median score: {}, mean score: {}, median norm ref: {}, median norm unref: {}, min unnorm unref: {}, max unnorm unref: {}").format(
+        max(scores), min(scores), median(scores), mean(scores), median(norm_ref_scores), median(norm_unref_scores), min(unref_scores), max(unref_scores)
+    )
+
     """train"""
     #hybrid.train_unref(data_dir, fquery, freply)
 

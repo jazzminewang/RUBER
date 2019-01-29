@@ -135,22 +135,22 @@ class Unreferenced():
                 self.score = tf.contrib.layers.legacy_fully_connected(
                     inputs_dropout, 1, activation_fn=tf.sigmoid,
                     weight_regularizer=tf.contrib.layers.l2_regularizer(l2_regular))
-		output_output = tf.print(self.score)
-		with tf.control_dependencies([output_output]):
-			self.score = tf.identity(self.score)
+		#output_output = tf.print(self.score)
+		#with tf.control_dependencies([output_output]):
+	        #		self.score = tf.identity(self.score)
 		self.score = tf.reshape(self.score, [-1]) # [batch_size]
-		reshape_output = tf.print(self.score)
-		with tf.control_dependencies([reshape_output]):
-    			self.score = tf.identity(self.score)
+		#reshape_output = tf.print(self.score)
+		#with tf.control_dependencies([reshape_output]):
+    	#		self.score = tf.identity(self.score)
 	    # define training related ops
 	with tf.variable_scope('train'):
 		
                 # calculate losses
-		presplit_output = tf.print(self.score)
+		#presplit_output = tf.print(self.score)
                
-		with tf.control_dependencies([presplit_output]):
-			self.score = tf.identity(self.score)
-		train_scope_print = tf.print(self.score)
+		#with tf.control_dependencies([presplit_output]):
+		#	self.score = tf.identity(self.score)
+		#train_scope_print = tf.print(self.score)
 		#self.pos_score, self.neg_score = tf.split(self.score, 2)
 		self.pos_score = self.score #for inference, only need the positive score (no negative sampling needed)
 		print("successfully split")
@@ -322,7 +322,7 @@ class Unreferenced():
                 score = self.session.run(self.pos_score, feed_dict)
                 scores.append(score[0])
             """ Debug """
-            for i, s in enumerate(scores):
-                print (i,s)
+            #for i, s in enumerate(scores):
+            #    print (i,s)
             
         return scores
