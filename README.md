@@ -25,6 +25,14 @@ python hybrid_evaluation.py
 python hybrid_evaluation.py
 ```
 
+To create your synthesized replies, either use a dialogue generation model or scramble your replies.txt.true like so: 
+```
+import random
+lines = open('replies.txt').readlines()
+random.shuffle(lines)
+open('replies_scrambled.txt', 'w').writelines(lines)
+```
+
 5. 
 
 #TODO:
