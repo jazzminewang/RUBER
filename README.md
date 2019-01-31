@@ -36,7 +36,7 @@ open('replies_scrambled.txt', 'w').writelines(lines)
 5. 
 
 #TODO:
-1. Add functionality to save query, reply, ground truth reply, unreferenced metric, referenced metric, and final score to CSV instead of terminal.
+1. Test results against ADEM dataset.
 2. Process data better (instead of alternating lines query and reply, split by large spaces / regex (?)
 3. Create validation
 4. Add argparse to hybrid_evaluation for train/eval. 
