@@ -7,6 +7,7 @@ import numpy as np
 import sys
 import csv
 from numpy import median, mean
+import time
 
 class Hybrid():
     def __init__(self,
@@ -81,18 +82,45 @@ if __name__ == '__main__':
    
     # scores = hybrid.unref.scores(data_dir, '%s.sub'%fquery, '%s.sub'%freply, "%s.vocab%d"%(fquery,qmax_length), "%s.vocab%d"%(freply, rmax_length))
     scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
-    
+    csv_title = './results/' + str(int(time.time())) + '.csv'
     """write results to CSV"""
-    with open('results' + int(time.time()) + '.csv', 'wb') as csvfile:
+    with open(csv_title, 'wb') as csvfile:
          writer = csv.writer(csvfile, delimiter=',')
          # Name the columns
          column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
          writer.writerow([col for col in column_titles])
          
-         with open(data_dir + '%s.sub'%fquery, "r") as queries, open(data_dir + '%s.sub'%freply, "r") as scored_replies, open(data_dir + '%s.true.sub'%freply, "r") as true_replies:
-            #Write rows
-            for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in \
-                queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores:
+         with open(data_dir + '/%s.sub'%fquery, "r") as queries, open(data_dir + '/%s.sub'%freply, "r") as scored_replies, open(data_dir + '/%s.true.sub'%freply, "r") as true_replies:
+            #"Write rows
+	    """
+            print("queries")
+	    print(sum(1 for line in queries))
+	    print("scored replies")
+	    print(sum(1 for line in scored_replies))
+	    print("true replies")
+            print(sum(1 for line in true_replies))
+	    print(len(scores))
+	    print(len(ref_scores))
+	    print(len(norm_ref_scores))
+	    print(len(unref_scores))
+	    print(len(norm_unref_scores))
+	    print("printed everything")
+
+	    for query, scored_reply, true_reply in queries, scored_replies, true_replies:
+		query = query.rstrip()
+                scored_reply = scored_reply.rstrip()
+                true_reply = true_reply.rstrip()
+		print(scored_reply)
+
+	    for score, ref_score, norm_ref_score, unref_score, norm_unref_score in scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores:
+		print("yay")
+	    """
+
+            for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
+		query = query.rstrip()
+		scored_reply = scored_reply.rstrip()
+		true_reply = true_reply.rstrip()
+
                 writer.writerow([query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score])
     csvfile.close()
 
@@ -100,6 +128,7 @@ if __name__ == '__main__':
         max(scores), min(scores), median(scores), mean(scores), median(norm_ref_scores), median(norm_unref_scores), min(unref_scores), max(unref_scores)
     )
 
+    print("Wrote results to " + csv_title)
     """train"""
     #hybrid.train_unref(data_dir, fquery, freply)
 
