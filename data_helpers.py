@@ -111,7 +111,6 @@ def make_embedding_matrix(data_dir, fname, word2vec, vec_dim, fvocab):
     print 'Saving embedding matrix in %s'%foutput
     matrix=[]
 
-    # creating embedding matrix from word2vec. WOAH!
     for vocab in vocab_str:
         vec = word2vec[vocab] if vocab in word2vec \
                 else [0.0 for _ in range(vec_dim)]
@@ -138,7 +137,7 @@ def load_word2vec(data_dir, fword2vec):
             vecs[ps[0]] = map(float, ps[1:])
     return vecs, vec_dim, size
 
-def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
+def parse_persona_chat_dataset(data_dir, persona_chat_dir):
     """
     Return:
         file path to file with all queries
@@ -154,13 +153,11 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
 
     if not fquery_file.exists() and not freply_file.exists():
         print("Creating queries and replies dataset")
-        directory = os.path.join(data_dir, persona_chat_dir)
+        directory = os.path.join(data_dir, "personachat")
         
 	for data_filename in os.listdir(directory):
-	    
             if "train" in data_filename and "no_cand" in data_filename and "revised" in data_filename:
-
-                data_filename = os.path.join(data_dir, persona_chat_dir, data_filename)
+                data_filename = os.path.join(data_dir, "personachat", data_filename)
                 print(data_filename)
                 # parse files with 
                 with open(data_filename, "r") as datafile, open(fquery_filename, "w+") as queries, open(freply_filename, "w+") as replies:
@@ -169,11 +166,8 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
                     replies_line_count = 0
 
                     while True: 
-                        # time.sleep(5)
                         l1 = datafile.readline()
                         l2 = datafile.readline()
-                        # print(l1)
-                        # print(l2)
 
                         if (queries_line_count - replies_line_count) > 1:
                             difference = queries_line_count - replies_line_count
@@ -197,43 +191,119 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir="personachat"):
 
                             if "persona:" in l1 and "persona:" not in l2:
                                 #l2 is starting a new conversation! l2 is query only.
-                                print("l2 is query")
                                 new_conversation = False
-                                queries.write(l2) 
-                                queries_line_count += 1
+                                if "\t" in l2:
+                                    # if there is a turn in the line.
+                                    l2 = l2.split("\t")
+                                    query = l2[0]
+                                    reply = l2[len(l2) - 1]
+                                    print("adding " + query + " and " + reply + " to queries")
+                                    queries.write(query)
+                                    replies.write(reply)
+                                    queries.write(reply)
+                                    queries_line_count += 2
+                                    replies_line_count += 1
+                                else:
+                                    queries.write(l2) 
+                                    queries_line_count += 1
+
                             elif "persona:" not in l1 and "persona:" not in l2 and new_conversation:
                                 #l1 is starting a new conversation! 
-                                print("l1 is query, l2 is response + query")
-                                queries.write(l1)
-                                replies.write(l2)                                
-                                queries.write(l2)
-                                queries_line_count += 2
-                                replies_line_count += 1
+                                if "\t" in l1 or "\t" in l2:
+                                    if "\t" in l1:
+                                        l1 = l1.split("\t")
+                                        query = l1[0]
+                                        reply = l1[len(l1) -1]
+                                        queries.write(query)
+                                        replies.write(reply)
+                                        queries.write(reply)
+                                        print("adding " + query + " and " + reply + " to queries")
+                                        queries_line_count += 2
+                                        replies_line_count += 1
+                                        
+                                    if "\t" in l2:
+                                        #l2 has reply,query and reply,query
+                                        l2 = l2.split("\t")
+                                        query = l2[0]
+                                        reply = l2[len(l2) - 1]
+                                        replies.write(query)
+                                        queries.write(query)
+                                        replies.write(reply)
+                                        queries.write(reply)
+                                        print("adding " + query + " and " + reply + " to queries")
+
+                                        queries_line_count += 2
+                                        replies_line_count += 2
+                                else:
+                                    queries.write(l1)
+                                    replies.write(l2)                                
+                                    queries.write(l2)
+                                    queries_line_count += 2
+                                    replies_line_count += 1
                                 new_conversation = False
                             elif "persona:" not in l1 and "persona:" not in l2:
-                                #part of an old conversation, but check if it terminates
-                                print("l1 is response + query, l2 is response")
-                                replies.write(l1)
-                                queries.write(l1)
-                                replies.write(l2)
-                                queries_line_count += 1
-                                replies_line_count += 2
+                                #part of an old conversation, but check if it terminates before adding l2 to queries
+                                if "\t" in l1 or "\t" in l2:
+                                    if "\t" in l1:
+                                        #l1 has query and reply
+                                        l1 = l1.split("\t")
+                                        query = l1[0]
+                                        reply = l1[len(l1) - 1]
+                                        queries.write(query)
+                                        replies.write(reply)
+                                        queries.write(reply)
+                                        print("adding " + query + " and " + reply + " to queries")
+
+                                        queries_line_count += 2
+                                        replies_line_count += 1
+                                        
+                                    if "\t" in l2:
+                                        print("l2 has reply,query and reply")
+                                        l2 = l2.split("\t")
+                                        query = l2[0]
+                                        reply = l2[len(l2) -1]
+                                        replies.write(query)
+                                        queries.write(query)
+                                        replies.write(reply)
+                                        print("adding " + query + " and " + reply + " to queries")
+
+                                        queries_line_count += 1
+                                        replies_line_count += 2
+                                else:
+                                    replies.write(l1)
+                                    queries.write(l1)
+                                    replies.write(l2)
+                                    print("adding " + l1 + " to queries")
+
+                                    queries_line_count += 1
+                                    replies_line_count += 2
 
                                 position = datafile.tell()
                                 check_line = datafile.readline()
-                                # if the next line doesn't start a new conversation, store l2 as query also
+                                # if the next line doesn't start a new conversation, store l2 or last element of l2 as query also
                                 if "persona:" not in check_line:
-                                    print("l2 is also query")
-                                    queries.write(l2)
+                                    if type(l2) == str:
+                                        queries.write(l2)
+                                    else:
+                                        queries.write(l2[len(l2) - 1])
                                     queries_line_count +=1
                                 else:
-                                    print("l2 is last sentence in conversation")
                                     new_conversation = True
                                 datafile.seek(position)
                             elif "persona:" not in l1 and "persona:" in l2:
-                                print("l1 is last sentence in conversation")
-                                replies.write(l1)
-                                replies_line_count +=1
+                                if "\t" in l1:
+                                    print("there is a longg space")
+                                    l1 = l1.split("\t")
+                                    query = l1[0]
+                                    reply = l1[len(l1) - 1]
+                                    print("adding " + query + " and " + reply + " to queries")
+                                    queries.write(query)
+                                    replies.write(reply)
+                                    queries_line_count += 1
+                                    replies_line_count += 1
+                                else: 
+                                    replies.write(l1)
+                                    replies_line_count +=1
                                 new_conversation = True
         
     return fquery_filename_short, freply_filename_short
@@ -244,9 +314,14 @@ if __name__ == '__main__':
     query_max_length, reply_max_length = [20, 30]
 
     # Specific to Persona Chat dataset
-    #fquery, freply = parse_persona_chat_dataset(data_dir)
-    fquery = "personachat/validation_personachat/queries_validation.txt"
-    freply = "personachat/validation_personachat/replies_validation.txt"
+    fquery, freply = parse_persona_chat_dataset(data_dir, "personachat/better_turns/")
+    # fquery = "personachat/validation_personachat/queries_validation.txt"
+    # freply = "personachat/validation_personachat/replies_validation.txt"
+
+    # Better turns
+    # fquery = "personachat/better_turns/queries.txt"
+    # freply = "personachat/better_turns/replies.txt"
+
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
     frword2vec = 'GoogleNews-vectors-negative300.txt'

@@ -7,6 +7,7 @@ import numpy as np
 import sys
 import csv
 from numpy import median, mean
+import argparse
 
 class Hybrid():
     def __init__(self,
@@ -58,17 +59,27 @@ class Hybrid():
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('mode')
+    args = parser.parse_args()
+
     train_dir = 'data'
     data_dir = 'data'
     qmax_length, rmax_length = [20, 30]
 
-    """ for validation """
-    # embedding matrix file for query and reply
-    fquery = "personachat/validation_personachat/queries_validation.txt"
-    freply = "personachat/validation_personachat/replies_validation.txt"
-    """ for training """
-    #fquery = "personachat/queries.txt"
-    #freply = "personachat/replies.txt"
+    if args.mode == "eval_personachat":
+        """ for validation """
+        # embedding matrix file for query and reply
+        fquery = "personachat/validation_personachat/queries_validation.txt"
+        freply = "personachat/validation_personachat/replies_validation.txt"
+    elif args.mode == "eval_ADEM":
+        data_dir = 'ADEM_data'
+        fquery = "processed/queries.txt"
+        freply = "processed/replies.txt"
+    else:
+        """ for training """
+        fquery = "personachat/queries.txt"
+        freply = "personachat/replies.txt"
 
     """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
