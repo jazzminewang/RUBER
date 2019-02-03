@@ -61,7 +61,9 @@ class Hybrid():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('mode')
+    parser.add_argument('mode') 
+    parser.add_argument('reply_file')
+
     args = parser.parse_args()
 
     train_dir = 'data'
@@ -69,9 +71,9 @@ if __name__ == '__main__':
     qmax_length, rmax_length = [20, 30]
 
     print("args.mode is: " + args.mode)
+
     if args.mode == "eval_personachat":
-        """ for validation """
-	print("Evaluating Personachat")
+        print("Evaluating Personachat")
         # embedding matrix file for query and reply
         fquery = "personachat/validation_personachat/queries_validation.txt"
         freply = "personachat/validation_personachat/replies_validation.txt"
@@ -80,14 +82,9 @@ if __name__ == '__main__':
         print("Evaluating ADEM")
         data_dir = 'ADEM_data/data'
         fquery = "queries.txt"
-        freply1 = "human_replies.txt"
-        freply2 = "hred_replies.txt"
-        freply3 = "de_replies.txt"
-        freply4 = 'tfidf_replies.txt'
-	freply = freply1
+        freply = args.reply_file
     else:
-        """ for training """
-	print("Training ")
+        print("Training")
         fquery = "personachat/queries.txt"
         freply = "personachat/replies.txt"
 
@@ -100,44 +97,44 @@ if __name__ == '__main__':
     """test"""
     print("Getting scores")
 
-	hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
-	print("Initialized hybrid object")
+    hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
+    print("Initialized hybrid object")
 
-	if args.mode == "eval_ADEM": 
-	        scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
-	else:
-      		scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
+    if args.mode == "eval_ADEM": 
+            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
+    else:
+            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
 
-	csv_title = './results/' + freply + str(int(time.time())) + '.csv'
+    csv_title = './results/' + freply + str(int(time.time())) + '.csv'
 
-        """write results to CSV"""
-        with open(csv_title, 'wb') as csvfile:
-            writer = csv.writer(csvfile, delimiter=',')
-            # Name the columns
-            column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
-            writer.writerow([col for col in column_titles])
-            
-            if args.mode != "eval_ADEM":
-                fquery = '%s.sub'%fquery
-                freply = '%s.sub'%freply
-                true = '%s.true.sub'%freply
-            else:
-                true = "true.txt"
-	    
-            with open(data_dir + "/" + fquery, "r") as queries, \
-                 open(data_dir+ "/" + freply, "r") as scored_replies, \
-                     open(data_dir+ "/"  + true, "r") as true_replies:
-            	for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
-                    query = query.rstrip()
-                    scored_reply = scored_reply.rstrip()
-                    true_reply = true_reply.rstrip()
-                    writer.writerow([query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score])
-        csvfile.close()
+    """write results to CSV"""
+    with open(csv_title, 'wb') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        # Name the columns
+        column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
+        writer.writerow([col for col in column_titles])
+        
+        if args.mode != "eval_ADEM":
+            fquery = '%s.sub'%fquery
+            freply = '%s.sub'%freply
+            true = '%s.true.sub'%freply
+        else:
+            true = "true.txt"
 
-        print("max score: {}, min score: {}, median score: {}, mean score: {}, median norm ref: {}, median norm unref: {}, min unnorm unref: {}, max unnorm unref: {}").format(
-            max(scores), min(scores), median(scores), mean(scores), median(norm_ref_scores), median(norm_unref_scores), min(unref_scores), max(unref_scores)
-        )
+        with open(data_dir + "/" + fquery, "r") as queries, \
+                open(data_dir+ "/" + freply, "r") as scored_replies, \
+                    open(data_dir+ "/"  + true, "r") as true_replies:
+            for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
+                query = query.rstrip()
+                scored_reply = scored_reply.rstrip()
+                true_reply = true_reply.rstrip()
+                writer.writerow([query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score])
+    csvfile.close()
 
-        print("Wrote results to " + csv_title)
+    print("max score: {}, min score: {}, median score: {}, mean score: {}, median norm ref: {}, median norm unref: {}, min unnorm unref: {}, max unnorm unref: {}").format(
+        max(scores), min(scores), median(scores), mean(scores), median(norm_ref_scores), median(norm_unref_scores), min(unref_scores), max(unref_scores)
+    )
+
+    print("Wrote results to " + csv_title)
     """train"""
     #hybrid.train_unref(data_dir, fquery, freply)
