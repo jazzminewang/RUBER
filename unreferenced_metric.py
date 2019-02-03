@@ -76,7 +76,7 @@ class Unreferenced():
                 return tf.concat([state_fw, state_bw], 1)
 
             # query GRU bidirectional RNN
-            with tf.variable_scope('query_bidirectional_rnn'):
+            with tf.variable_scope('query_bidirectional_rnn', reuse=True):
                 self.query_sizes = tf.placeholder(tf.int32,
                         # batch_size
                         shape=[None], name="query_sizes")

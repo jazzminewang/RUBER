@@ -68,8 +68,10 @@ if __name__ == '__main__':
     data_dir = 'data'
     qmax_length, rmax_length = [20, 30]
 
+    print("args.mode is: " + args.mode)
     if args.mode == "eval_personachat":
         """ for validation """
+	print("Evaluating Personachat")
         # embedding matrix file for query and reply
         fquery = "personachat/validation_personachat/queries_validation.txt"
         freply = "personachat/validation_personachat/replies_validation.txt"
@@ -85,21 +87,28 @@ if __name__ == '__main__':
         freplies = [freply1, freply2, freply3, freply4]
     else:
         """ for training """
+	print("Training ")
         fquery = "personachat/queries.txt"
         freply = "personachat/replies.txt"
 
     """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
-    print("Initializing Hybrid object")
-    hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
+    #print("Initializing Hybrid object")
+    #hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
 
     """test"""
     print("Getting scores")
 
-    for freply in frplies:
-        scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
-        csv_title = './results/' + freply + str(int(time.time())) + '.csv'
+    for freply in freplies:
+	hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
+	print("Initialized hybrid object")
+	if args.mode == "eval_ADEM": 
+	        scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, fquery, 'true.txt',freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
+	else:
+      		 scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
+
+	csv_title = './results/' + freply + str(int(time.time())) + '.csv'
 
         """write results to CSV"""
         with open(csv_title, 'wb') as csvfile:
@@ -108,9 +117,17 @@ if __name__ == '__main__':
             column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
             writer.writerow([col for col in column_titles])
             
-            with open(data_dir + '/%s.sub'%fquery, "r") as queries, open(data_dir + '/%s.sub'%freply, "r") as scored_replies, open(data_dir + '/%s.true.sub'%freply, "r") as true_replies:
-                #"Write row
-                for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
+            if args.mode != "eval_ADEM":
+		fquery = '%s.sub'%fquery
+		freply = '%s.sub'%freply
+		true = '%s.true.sub'%freply
+	    else:
+		true = "true.txt"
+	    
+            with open(data_dir + "/" + fquery, "r") as queries, open(data_dir+ "/" + freply, "r") as scored_replies, open(data_dir+ "/"  + true, "r") as true_replies:
+                true_replies_array = true_replies.readlines()
+            	for query, scored_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
+		    true_reply = true_replies_array[int(context_id)]
                     query = query.rstrip()
                     scored_reply = scored_reply.rstrip()
                     true_reply = true_reply.rstrip()

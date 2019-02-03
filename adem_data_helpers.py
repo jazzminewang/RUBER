@@ -224,8 +224,8 @@ if __name__ == '__main__':
     make_embedding_matrix(data_dir, fquery, word2vec, vec_dim, fqvocab)
 
     word2vec, vec_dim, _ = load_word2vec(data_dir, frword2vec)
-    make_embedding_matrix(data_dir, freply1, word2vec, vec_dim, frvocab)
-    make_embedding_matrix(data_dir, freply2, word2vec, vec_dim, frvocab)
-    make_embedding_matrix(data_dir, freply3, word2vec, vec_dim, frvocab)
-    make_embedding_matrix(data_dir, freply4, word2vec, vec_dim, frvocab)
+    make_embedding_matrix(data_dir, freply1, word2vec, vec_dim, frvocab1)
+    make_embedding_matrix(data_dir, freply2, word2vec, vec_dim, frvocab2)
+    make_embedding_matrix(data_dir, freply3, word2vec, vec_dim, frvocab3)
+    make_embedding_matrix(data_dir, freply4, word2vec, vec_dim, frvocab4)
     pass
