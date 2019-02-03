@@ -49,8 +49,8 @@ class Hybrid():
 	    ret = [(s - smin) / diff for s in scores]
         return ret
 
-    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab):
-        ref_scores = self.ref.scores(data_dir, freply, fgenerated)
+    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab, mode=None):
+        ref_scores = self.ref.scores(data_dir, freply, fgenerated, mode)
         norm_ref_scores = self.normalize(ref_scores, coefficient=2)
         
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
@@ -103,10 +103,11 @@ if __name__ == '__main__':
     for freply in freplies:
 	hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
 	print("Initialized hybrid object")
+
 	if args.mode == "eval_ADEM": 
-	        scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, fquery, 'true.txt',freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
+	        scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
 	else:
-      		 scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
+      		scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
 
 	csv_title = './results/' + freply + str(int(time.time())) + '.csv'
 
@@ -118,16 +119,16 @@ if __name__ == '__main__':
             writer.writerow([col for col in column_titles])
             
             if args.mode != "eval_ADEM":
-		fquery = '%s.sub'%fquery
-		freply = '%s.sub'%freply
-		true = '%s.true.sub'%freply
-	    else:
-		true = "true.txt"
+                fquery = '%s.sub'%fquery
+                freply = '%s.sub'%freply
+                true = '%s.true.sub'%freply
+            else:
+                true = "true.txt"
 	    
-            with open(data_dir + "/" + fquery, "r") as queries, open(data_dir+ "/" + freply, "r") as scored_replies, open(data_dir+ "/"  + true, "r") as true_replies:
-                true_replies_array = true_replies.readlines()
-            	for query, scored_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
-		    true_reply = true_replies_array[int(context_id)]
+            with open(data_dir + "/" + fquery, "r") as queries, \
+                 open(data_dir+ "/" + freply, "r") as scored_replies, \
+                     open(data_dir+ "/"  + true, "r") as true_replies:
+            	for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
                     query = query.rstrip()
                     scored_reply = scored_reply.rstrip()
                     true_reply = true_reply.rstrip()
@@ -141,8 +142,3 @@ if __name__ == '__main__':
         print("Wrote results to " + csv_title)
     """train"""
     #hybrid.train_unref(data_dir, fquery, freply)
-
-
-# 1. go to datahelpers, change their files. restructure data.
-# 2. run train for unref metric --> checkpoint file. 
-# 3. run inference. 

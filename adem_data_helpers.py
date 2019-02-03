@@ -107,8 +107,11 @@ def load_adem_data(data_dir):
                 """
                 
                 # Step 1:
+                # Sort queries_and_replies.
                 # Write queries and replies (list of lists) into queries.txt and replies1-n.txt
-                #
+                # 
+                queries_and_replies.sort(key=lambda x: x[0])
+
                 for content in queries_and_replies:
                     context_id = content[0]
                     query = content[1]
@@ -121,7 +124,7 @@ def load_adem_data(data_dir):
 
                     model_order = replies_to_model_type[context_id]
 
-                    print("Example content: query" + query)
+                    print("Context id: " + str(context_id))
                     print("r1 " + r1 + " " + model_order[0])
                     print("r2 " + r2 + " " + model_order[1])
                     print("r3 " + r3+ " " + model_order[2])
@@ -173,16 +176,14 @@ def write_adem_to_csv(data_dir):
                                             open(data_dir + '/de_scores.txt', 'r') as de_scores, \
                                                 open(data_dir + '/tfidf_scores.txt', 'r') as tfidf_scores:
 
-        true_replies_array = true_replies.readlines()
 
         with open(data_dir + "/benchmark.csv", "w+") as csvfile:
             writer = csv.writer(csvfile, delimiter=',')
             column_titles = ["Context_ID", "Query", "Ground truth reply", "Human", "Human_score", "HRED", "HRED_score", "DE", "DE_score", "TF-IDF", "TF-IDF_score"]
             writer.writerow([col for col in column_titles])
 
-            for context_id, query, human, human_score, hred, hred_score, de, de_score, tf_idf, tf_idf_score in \
-                izip(context_ids, queries, human_replies, human_scores, hred_replies, hred_scores, de_replies, de_scores, tfidf_replies, tfidf_scores):
-                    true_reply = true_replies_array[int(context_id)]
+            for context_id, query, true_reply, human, human_score, hred, hred_score, de, de_score, tf_idf, tf_idf_score in \
+                izip(context_ids, queries, true_replies, human_replies, human_scores, hred_replies, hred_scores, de_replies, de_scores, tfidf_replies, tfidf_scores):
                     writer.writerow([context_id, query, true_reply, human, human_score, hred, hred_score, de, de_score, tf_idf, tf_idf_score])
         csvfile.close()
 
@@ -191,7 +192,6 @@ def write_adem_to_csv(data_dir):
 if __name__ == '__main__':
     data_dir = './ADEM_data/data'
     query_max_length, reply_max_length = [20, 30]
-# fquery, freply1, freply2, freply3, freply4 = 
     print("Loading ADEM data")
     load_adem_data(data_dir)
     print("Writing data to CSV")
