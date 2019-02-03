@@ -5,8 +5,11 @@ import numpy as np
 from tensorflow.contrib import learn
 from pathlib import Path
 import time
-from data_helpers import *
+from data_helpers import process_train_file, load_word2vec, make_embedding_matrix
 import pickle
+import csv
+from itertools import izip
+
 
 # This file creates a CSV with columns: 
 # Context ID, Context (Query), Ground truth reply, Reply1 ('human'), Reply2 ('hred'), Reply3 ('de'), Reply4 ('tfidf'), Score1, Score2, Score3, Score4
@@ -23,13 +26,46 @@ import pickle
 def load_adem_data(data_dir):
     with open(data_dir + '/models.pkl', 'rb') as models, \
         open(data_dir + '/clean_data.pkl', 'rb') as scores, \
-            open(data_dir + '/contexts.pkl', 'rb') as queries_and_replies, \
+            open(data_dir + '/contexts.pkl', 'rb') as queries_and_replies_pickle, \
                 open(data_dir + '/queries.txt', 'w+') as queries, \
                     open(data_dir + '/human_replies.txt', 'w+') as human_replies, \
                         open(data_dir + '/hred_replies.txt', 'w+') as hred_replies, \
                             open(data_dir + '/de_replies.txt', 'w+') as de_replies, \
-                                open(data_dir + '/tfidf_replies.txt', 'w+') as tfidf_replies :
+                                open(data_dir + '/tfidf_replies.txt', 'w+') as tfidf_replies,\
+                                    open(data_dir + '/context_ids.txt', 'w+') as context_ids, \
+                                        open(data_dir + '/human_scores.txt', 'w+') as human_scores, \
+                                            open(data_dir + '/hred_scores.txt', 'w+') as hred_scores, \
+                                                open(data_dir + '/de_scores.txt', 'w+') as de_scores, \
+                                                    open(data_dir + '/tfidf_scores.txt', 'w+') as tfidf_scores:
+                def write_scores_to_file(context_id, model_type, index):
+                    score_key = "overall" + str(index)
+                    print("Looking for context id " + str(context_id) + " for " + model_type)
+                    avg_score = []
+                    
+                    for list_scores in scores_dict.values():
+                        for task in list_scores:
+                            if task["c_id"] == context_id:
+                                model_score = int(task[score_key])
+                                avg_score.append(model_score)
+                                print(model_score)
+                    
+                    if avg_score == []:
+                        print("score not present")
+                        score = -1
+                    else:
+                        score = sum(avg_score) / float(len(avg_score))
+                        print("average score: " + str(score))
 
+                    score = str(score) +"\n"
+
+                    if "human" in model_type:
+                        human_scores.write(score)
+                    elif "hred" in model_type:
+                        hred_scores.write(score)
+                    elif "de" in model_type:
+                        de_scores.write(score)
+                    elif "tfidf" in model_type:
+                        tfidf_scores.write(score)
 
                 def write_to_file(model_type, line):
                     line = line.encode('utf-8').strip()
@@ -55,7 +91,7 @@ def load_adem_data(data_dir):
                         clean_data*.pkl.
                 """
 
-                scores = pickle.load(scores)
+                scores_dict = pickle.load(scores)
                 """
                 type: dict
                     keys: AMT HIT ID
@@ -64,7 +100,7 @@ def load_adem_data(data_dir):
                         values: scores by AMT user
                 """
 
-                queries_and_replies = pickle.load(queries_and_replies)   
+                queries_and_replies = pickle.load(queries_and_replies_pickle)   
                 """
                 type: list
 		            values: list [context_id, context, r1, r2, r3, r4]
@@ -81,14 +117,74 @@ def load_adem_data(data_dir):
                     r3 = content[4]
                     r4 = content[5]
 
+                    # print("Example content: query: {}, r1: {}, r2: {}, r3: {}, r4: {}").format(query, r1, r2, r3, r4)
+
                     model_order = replies_to_model_type[context_id]
+
+                    print("Example content: query" + query)
+                    print("r1 " + r1 + " " + model_order[0])
+                    print("r2 " + r2 + " " + model_order[1])
+                    print("r3 " + r3+ " " + model_order[2])
+                    print("r4 " + r4+ " " + model_order[3])
 
                     write_to_file(model_order[0], r1)
                     write_to_file(model_order[1], r2)
                     write_to_file(model_order[2], r3)
                     write_to_file(model_order[3], r4)
                     write_to_file(None, line=query)
-                print("Finished writing queries and replies files")
+                    context_ids.write(str(context_id)+"\n")
+
+                    # write all shit to scores - separate txt file for each
+                    write_scores_to_file(context_id, model_order[0], 1)
+                    write_scores_to_file(context_id, model_order[1], 2)
+                    write_scores_to_file(context_id, model_order[2], 3)
+                    write_scores_to_file(context_id, model_order[3], 4)
+                    
+                print("Finished writing queries, replies, and scores files")
+
+    models.close()
+    scores.close()
+    queries_and_replies_pickle.close()
+    queries.close()
+    human_replies.close()
+    hred_replies.close()
+    de_replies.close()
+    tfidf_replies.close()
+    context_ids.close()
+    human_scores.close()
+    hred_scores.close()
+    de_scores.close()
+    tfidf_scores.close()
+
+
+def write_adem_to_csv(data_dir):
+    # Step 2:
+    # Create CSV with human scores (can combine later results with pandas)
+    """write results to CSV"""
+    with  open(data_dir + '/queries.txt', 'r') as queries, \
+            open(data_dir + '/human_replies.txt', 'r') as human_replies, \
+                open(data_dir + '/hred_replies.txt', 'r') as hred_replies, \
+                    open(data_dir + '/de_replies.txt', 'r') as de_replies, \
+                        open(data_dir + '/tfidf_replies.txt', 'r') as tfidf_replies, \
+                            open(data_dir + '/context_ids.txt', 'r') as context_ids, \
+                                open(data_dir + '/true.txt', 'r') as true_replies, \
+                                    open(data_dir + '/human_scores.txt', 'r') as human_scores, \
+                                        open(data_dir + '/hred_scores.txt', 'r') as hred_scores, \
+                                            open(data_dir + '/de_scores.txt', 'r') as de_scores, \
+                                                open(data_dir + '/tfidf_scores.txt', 'r') as tfidf_scores:
+
+        true_replies_array = true_replies.readlines()
+
+        with open(data_dir + "/benchmark.csv", "w+") as csvfile:
+            writer = csv.writer(csvfile, delimiter=',')
+            column_titles = ["Context_ID", "Query", "Ground truth reply", "Human", "Human_score", "HRED", "HRED_score", "DE", "DE_score", "TF-IDF", "TF-IDF_score"]
+            writer.writerow([col for col in column_titles])
+
+            for context_id, query, human, human_score, hred, hred_score, de, de_score, tf_idf, tf_idf_score in \
+                izip(context_ids, queries, human_replies, human_scores, hred_replies, hred_scores, de_replies, de_scores, tfidf_replies, tfidf_scores):
+                    true_reply = true_replies_array[int(context_id)]
+                    writer.writerow([context_id, query, true_reply, human, human_score, hred, hred_score, de, de_score, tf_idf, tf_idf_score])
+        csvfile.close()
 
 
             
@@ -96,7 +192,10 @@ if __name__ == '__main__':
     data_dir = './ADEM_data/data'
     query_max_length, reply_max_length = [20, 30]
 # fquery, freply1, freply2, freply3, freply4 = 
+    print("Loading ADEM data")
     load_adem_data(data_dir)
+    print("Writing data to CSV")
+    write_adem_to_csv(data_dir)
 
     fquery = "queries.txt"
     freply1 = "human_replies.txt"
