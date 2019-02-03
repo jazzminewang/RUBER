@@ -75,7 +75,7 @@ if __name__ == '__main__':
         # embedding matrix file for query and reply
         fquery = "personachat/validation_personachat/queries_validation.txt"
         freply = "personachat/validation_personachat/replies_validation.txt"
-        freplies = [freply]
+        freplies = freply
     elif args.mode == "eval_ADEM":
         print("Evaluating ADEM")
         data_dir = 'ADEM_data/data'
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         freply2 = "hred_replies.txt"
         freply3 = "de_replies.txt"
         freply4 = 'tfidf_replies.txt'
-        freplies = [freply1, freply2, freply3, freply4]
+	freply = freply1
     else:
         """ for training """
 	print("Training ")
@@ -100,7 +100,6 @@ if __name__ == '__main__':
     """test"""
     print("Getting scores")
 
-    for freply in freplies:
 	hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
 	print("Initialized hybrid object")
 
