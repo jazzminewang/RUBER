@@ -313,8 +313,10 @@ if __name__ == '__main__':
     data_dir = './data'
     query_max_length, reply_max_length = [20, 30]
 
-    # Specific to Persona Chat dataset
-    fquery, freply = parse_persona_chat_dataset(data_dir, "personachat/better_turns/")
+    """
+    PERSONA CHAT
+    """
+    # fquery, freply = parse_persona_chat_dataset(data_dir, "personachat/better_turns/")
     # fquery = "personachat/validation_personachat/queries_validation.txt"
     # freply = "personachat/validation_personachat/replies_validation.txt"
 

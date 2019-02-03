@@ -73,10 +73,16 @@ if __name__ == '__main__':
         # embedding matrix file for query and reply
         fquery = "personachat/validation_personachat/queries_validation.txt"
         freply = "personachat/validation_personachat/replies_validation.txt"
+        freplies = [freply]
     elif args.mode == "eval_ADEM":
-        data_dir = 'ADEM_data'
-        fquery = "processed/queries.txt"
-        freply = "processed/replies.txt"
+        print("Evaluating ADEM")
+        data_dir = 'ADEM_data/data'
+        fquery = "queries.txt"
+        freply1 = "human_replies.txt"
+        freply2 = "hred_replies.txt"
+        freply3 = "de_replies.txt"
+        freply4 = 'tfidf_replies.txt'
+        freplies = [freply1, freply2, freply3, freply4]
     else:
         """ for training """
         fquery = "personachat/queries.txt"
@@ -90,56 +96,32 @@ if __name__ == '__main__':
 
     """test"""
     print("Getting scores")
-   
-    # scores = hybrid.unref.scores(data_dir, '%s.sub'%fquery, '%s.sub'%freply, "%s.vocab%d"%(fquery,qmax_length), "%s.vocab%d"%(freply, rmax_length))
-    scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
-    csv_title = './results/' + str(int(time.time())) + '.csv'
-    """write results to CSV"""
-    with open(csv_title, 'wb') as csvfile:
-         writer = csv.writer(csvfile, delimiter=',')
-         # Name the columns
-         column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
-         writer.writerow([col for col in column_titles])
-         
-         with open(data_dir + '/%s.sub'%fquery, "r") as queries, open(data_dir + '/%s.sub'%freply, "r") as scored_replies, open(data_dir + '/%s.true.sub'%freply, "r") as true_replies:
-            #"Write rows
-	    """
-            print("queries")
-	    print(sum(1 for line in queries))
-	    print("scored replies")
-	    print(sum(1 for line in scored_replies))
-	    print("true replies")
-            print(sum(1 for line in true_replies))
-	    print(len(scores))
-	    print(len(ref_scores))
-	    print(len(norm_ref_scores))
-	    print(len(unref_scores))
-	    print(len(norm_unref_scores))
-	    print("printed everything")
 
-	    for query, scored_reply, true_reply in queries, scored_replies, true_replies:
-		query = query.rstrip()
-                scored_reply = scored_reply.rstrip()
-                true_reply = true_reply.rstrip()
-		print(scored_reply)
+    for freply in frplies:
+        scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
+        csv_title = './results/' + freply + str(int(time.time())) + '.csv'
 
-	    for score, ref_score, norm_ref_score, unref_score, norm_unref_score in scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores:
-		print("yay")
-	    """
+        """write results to CSV"""
+        with open(csv_title, 'wb') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',')
+            # Name the columns
+            column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
+            writer.writerow([col for col in column_titles])
+            
+            with open(data_dir + '/%s.sub'%fquery, "r") as queries, open(data_dir + '/%s.sub'%freply, "r") as scored_replies, open(data_dir + '/%s.true.sub'%freply, "r") as true_replies:
+                #"Write row
+                for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
+                    query = query.rstrip()
+                    scored_reply = scored_reply.rstrip()
+                    true_reply = true_reply.rstrip()
+                    writer.writerow([query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score])
+        csvfile.close()
 
-            for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
-		query = query.rstrip()
-		scored_reply = scored_reply.rstrip()
-		true_reply = true_reply.rstrip()
+        print("max score: {}, min score: {}, median score: {}, mean score: {}, median norm ref: {}, median norm unref: {}, min unnorm unref: {}, max unnorm unref: {}").format(
+            max(scores), min(scores), median(scores), mean(scores), median(norm_ref_scores), median(norm_unref_scores), min(unref_scores), max(unref_scores)
+        )
 
-                writer.writerow([query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score])
-    csvfile.close()
-
-    print("max score: {}, min score: {}, median score: {}, mean score: {}, median norm ref: {}, median norm unref: {}, min unnorm unref: {}, max unnorm unref: {}").format(
-        max(scores), min(scores), median(scores), mean(scores), median(norm_ref_scores), median(norm_unref_scores), min(unref_scores), max(unref_scores)
-    )
-
-    print("Wrote results to " + csv_title)
+        print("Wrote results to " + csv_title)
     """train"""
     #hybrid.train_unref(data_dir, fquery, freply)
 
