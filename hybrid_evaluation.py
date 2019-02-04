@@ -82,8 +82,14 @@ if __name__ == '__main__':
         fquery = "queries.txt"
         freply = args.reply_file
     else:
+<<<<<<< HEAD
         fquery = "personachat/queries.txt"
         freply = "personachat/replies.txt"
+=======
+        print("Training")
+        fquery = "personachat/better_turns/queries.txt"
+        freply = "personachat/better_turns/replies.txt"
+>>>>>>> b3d6a4c9862fe63d2cb4d2212c88b848df8b7574
 
     """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
