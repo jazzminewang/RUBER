@@ -135,51 +135,36 @@ class Unreferenced():
                 self.score = tf.contrib.layers.legacy_fully_connected(
                     inputs_dropout, 1, activation_fn=tf.sigmoid,
                     weight_regularizer=tf.contrib.layers.l2_regularizer(l2_regular))
-		#output_output = tf.print(self.score)
-		#with tf.control_dependencies([output_output]):
-	        #		self.score = tf.identity(self.score)
-		self.score = tf.reshape(self.score, [-1]) # [batch_size]
-		#reshape_output = tf.print(self.score)
-		#with tf.control_dependencies([reshape_output]):
-    	#		self.score = tf.identity(self.score)
-	    # define training related ops
+		        self.score = tf.reshape(self.score, [-1]) # [batch_size]
+
 	with tf.variable_scope('train'):
-		
-                # calculate losses
-		#presplit_output = tf.print(self.score)
-               
-		#with tf.control_dependencies([presplit_output]):
-		#	self.score = tf.identity(self.score)
-		#train_scope_print = tf.print(self.score)
-		#self.pos_score, self.neg_score = tf.split(self.score, 2)
-		self.pos_score = self.score #for inference, only need the positive score (no negative sampling needed)
-		print("successfully split")
-                """
-		losses = margin - self.pos_score + self.neg_score
-                # make loss >= 0
-                losses = tf.clip_by_value(losses, 0.0, 100.0)
-                self.loss = tf.reduce_mean(losses) # self.loss = tensor
-                # optimizer
-                self.learning_rate = tf.Variable(init_learning_rate,
-                        trainable=False, name="learning_rate")
-                self.learning_rate_decay_op = \
-                    self.learning_rate.assign(self.learning_rate*0.99)
-                
-                # ADAM backprop as mentioned in paper
-                optimizer = tf.train.AdamOptimizer(self.learning_rate)
-                self.global_step = tf.Variable(0, trainable=False,
-                        name="global_step")
-                # training op
-                with tf.device('/gpu:0'):
-                    self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
-                    # global step is just a count of how many times the variables have been updated
-                """
-                # checkpoint saver
-                self.saver = tf.train.Saver(tf.global_variables())
-                # write summary
-                self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),
-                        self.session.graph)
-                self.summary = tf.Summary()
+		# self.pos_score = self.score #for inference, only need the positive score (no negative sampling needed)
+        # calculate losses
+        self.pos_score, self.neg_score = tf.split(self.score, 2)
+        losses = margin - self.pos_score + self.neg_score
+        # make loss >= 0
+        losses = tf.clip_by_value(losses, 0.0, 100.0)
+        self.loss = tf.reduce_mean(losses) # self.loss = tensor
+        # optimizer
+        self.learning_rate = tf.Variable(init_learning_rate,
+                trainable=False, name="learning_rate")
+        self.learning_rate_decay_op = \
+            self.learning_rate.assign(self.learning_rate*0.99)
+        
+        # ADAM backprop as mentioned in paper
+        optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.global_step = tf.Variable(0, trainable=False,
+                name="global_step")
+        # training op
+        with tf.device('/gpu:0'):
+            self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
+            # global step is just a count of how many times the variables have been updated
+        # checkpoint saver
+        self.saver = tf.train.Saver(tf.global_variables())
+        # write summary
+        self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),
+                self.session.graph)
+        self.summary = tf.Summary()
 		print(self.summary)
 	
 
