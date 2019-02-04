@@ -223,14 +223,16 @@ if __name__ == '__main__':
 
     """
     PERSONA CHAT
+    modes: create training dataset
+    create embedding files for validation dataset
     """
-    fquery, freply = parse_persona_chat_dataset(data_dir, "personachat/better_turns/")
-    # fquery = "personachat/validation_personachat/queries_validation.txt"
-    # freply = "personachat/validation_personachat/replies_validation.txt"
+    # fquery, freply = parse_persona_chat_dataset(data_dir, "personachat/better_turns/")
+    fquery = "personachat/validation_personachat/queries.txt"
+    freply = "personachat/validation_personachat/replies.txt"
 
     # Better turns
-    fquery = "personachat/better_turns/queries.txt"
-    freply = "personachat/better_turns/replies.txt"
+    # fquery = "personachat/better_turns/queries.txt"
+    # freply = "personachat/better_turns/replies.txt"
 
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
