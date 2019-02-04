@@ -62,7 +62,7 @@ class Hybrid():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('mode') 
-    parser.add_argument('reply_file')
+    parser.add_argument('-reply_file')
 
     args = parser.parse_args()
 
@@ -85,8 +85,8 @@ if __name__ == '__main__':
         freply = args.reply_file
     else:
         print("Training")
-        fquery = "personachat/queries.txt"
-        freply = "personachat/replies.txt"
+        fquery = "personachat/better_turns/queries.txt"
+        freply = "personachat/better_turns/replies.txt"
 
     """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
