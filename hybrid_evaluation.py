@@ -49,14 +49,14 @@ class Hybrid():
 	    ret = [(s - smin) / diff for s in scores]
         return ret
 
-    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab, train_dir):
+    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab):
 	print("training dir is ")
 	print(train_dir)
-        ref_scores = self.ref.scores(data_dir, freply, fgenerated, train_dir)
+        ref_scores = self.ref.scores(data_dir, freply, fgenerated, train_dir=train_dir)
         norm_ref_scores = self.normalize(ref_scores, coefficient=2)
         
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
-                fqvocab, frvocab, train_dir)
+                fqvocab, frvocab, init=False, train_dir=train_dir)
         norm_unref_scores = self.normalize(unref_scores, coefficient=2)
 
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
@@ -68,8 +68,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    train_dir = 'data'
-    data_dir = 'data'
+    train_dir = 'ADEM_data/data'
+    data_dir = 'ADEM_data/data'
     qmax_length, rmax_length = [20, 30]
 
     print("Mode: " + args.mode)
@@ -78,6 +78,7 @@ if __name__ == '__main__':
         # embedding matrix file for query and reply
         fquery = "personachat/validation/queries.txt"
         freply = "personachat/validation/replies.txt"
+	hybrid_dir = 'data'
         freplies = freply
     elif args.mode == "eval_ADEM":
         data_dir = 'ADEM_data/data'
@@ -104,7 +105,7 @@ if __name__ == '__main__':
         if args.mode == "eval_ADEM": 
             print("Scoring ADEM data")
 	    print("training directory is " + data_dir)
-            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(hybrid_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(hybrid_fquery, qmax_length),'%s.vocab%d'%(hybrid_freply, rmax_length), train_dir=data_dir)
+            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(hybrid_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(hybrid_fquery, qmax_length),'%s.vocab%d'%(hybrid_freply, rmax_length))
 	    csv_title = './results/' + freply + str(int(time.time())) + '.csv'
         elif args.mode == "eval_personachat":
             scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))

@@ -292,21 +292,21 @@ class Unreferenced():
 
     def scores(self, data_dir, fquery, freply, fqvocab, frvocab, init=False, train_dir=None):
         if not init:
+	    print("not inited, initing now")
             self.init_model()
 
-	
+	train_dir = "ADEM_data/data"	
 	if train_dir is None: 
             queries = data_helpers.load_file(data_dir, fquery)
             replies = data_helpers.load_file(data_dir, freply)
-            qvocab = data_helpers.load_vocab(data_dir, fqvocab)
-            rvocab = data_helpers.load_vocab(data_dir, frvocab)
 	    data_size = len(queries)
 	else:
             queries = data_helpers.load_file(train_dir, fquery)
             replies = data_helpers.load_file(train_dir, freply)
             data_size = len(queries)
-            qvocab = data_helpers.load_vocab(train_dir, fqvocab)
-            rvocab = data_helpers.load_vocab(train_dir, frvocab)
+            
+	qvocab = data_helpers.load_vocab(data_dir, fqvocab)
+        rvocab = data_helpers.load_vocab(data_dir, frvocab)
         scores=[]
         with self.session.as_default():
             for query, reply in zip(queries, replies):
