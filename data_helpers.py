@@ -242,9 +242,9 @@ if __name__ == '__main__':
     fqvocab = '%s.vocab%d'%(fquery, query_max_length)
     frvocab = '%s.vocab%d'%(freply, reply_max_length)
 
-    # word2vec, vec_dim, _ = load_word2vec(data_dir, fqword2vec)
-    # make_embedding_matrix(data_dir, fquery, word2vec, vec_dim, fqvocab)
+    word2vec, vec_dim, _ = load_word2vec(data_dir, fqword2vec)
+    make_embedding_matrix(data_dir, fquery, word2vec, vec_dim, fqvocab)
 
-    # word2vec, vec_dim, _ = load_word2vec(data_dir, frword2vec)
-    # make_embedding_matrix(data_dir, freply, word2vec, vec_dim, frvocab)
+    word2vec, vec_dim, _ = load_word2vec(data_dir, frword2vec)
+    make_embedding_matrix(data_dir, freply, word2vec, vec_dim, frvocab)
     pass

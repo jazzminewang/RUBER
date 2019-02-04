@@ -82,32 +82,24 @@ if __name__ == '__main__':
         fquery = "queries.txt"
         freply = args.reply_file
     else:
-<<<<<<< HEAD
-        fquery = "personachat/queries.txt"
-        freply = "personachat/replies.txt"
-=======
-        print("Training")
         fquery = "personachat/better_turns/queries.txt"
         freply = "personachat/better_turns/replies.txt"
->>>>>>> b3d6a4c9862fe63d2cb4d2212c88b848df8b7574
 
     """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
-    #print("Initializing Hybrid object")
-    #hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
+    print("Initializing Hybrid object")
+    hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
 
     """test"""
     if args.mode != "train":
         print("Getting scores")
 
-        hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
-        print("Initialized hybrid object")
 
         if args.mode == "eval_ADEM": 
             print("Scoring ADEM data")
             scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
-        elif args.mode == "":
+        elif args.mode == "eval_personachat":
             scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
 
         csv_title = './results/' + freply + str(int(time.time())) + '.csv'
