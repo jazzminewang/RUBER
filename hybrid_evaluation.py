@@ -34,7 +34,7 @@ class Hybrid():
         print("training unreferenced metric")
         self.unref.train(data_dir, fquery, freply)
 
-    def normalize(self, scores, smin=None, smax=None, coefficient=None):
+    def normalize(self, scores, smin=None, smax=None, coefficient=None, smallest_value=0):
         if not smin and not smax:
 	    smin = min(scores)
             smax = max(scores)
@@ -44,20 +44,20 @@ class Hybrid():
 	    smin = smin
 	    diff = smax - smin
         if coefficient:
-	        ret = [coefficient * (s - smin) / diff for s in scores]
+	        ret = [smallest_value + (coefficient * (s - smin) / diff) for s in scores]
 	else:
-	    ret = [(s - smin) / diff for s in scores]
+	    ret = [smallest_value + ((s - smin) / diff) for s in scores]
         return ret
 
     def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab):
 	print("training dir is ")
 	print(train_dir)
         ref_scores = self.ref.scores(data_dir, freply, fgenerated, train_dir=train_dir)
-        norm_ref_scores = self.normalize(ref_scores, coefficient=2)
+	norm_ref_scores = self.normalize(ref_scores, coefficient=4, smallest_value=1)
         
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
                 fqvocab, frvocab, init=False, train_dir=train_dir)
-        norm_unref_scores = self.normalize(unref_scores, coefficient=2)
+        norm_unref_scores = self.normalize(unref_scores, coefficient=4, smallest_value=1)
 
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
 
@@ -136,8 +136,8 @@ if __name__ == '__main__':
                     writer.writerow([query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score])
         csvfile.close()
 
-        print("max score: {}, min score: {}, median score: {}, mean score: {}, median norm ref: {}, median norm unref: {}, min unnorm unref: {}, max unnorm unref: {}").format(
-            max(scores), min(scores), median(scores), mean(scores), median(norm_ref_scores), median(norm_unref_scores), min(unref_scores), max(unref_scores)
+        print("max score: {}, min score: {}, median score: {}, mean score: {}, median norm ref: {}, min unnorm ref: {}, max unnorm ref: {}, median norm unref: {}, min unnorm unref: {}, max unnorm unref: {}").format(
+            max(scores), min(scores), median(scores), mean(scores), median(norm_ref_scores), min(ref_scores), max(ref_scores), median(norm_unref_scores), min(unref_scores), max(unref_scores)
         )
 
         print("Wrote  model results to " + csv_title)

@@ -68,12 +68,12 @@ class Referenced():
     def score(self, groundtruth, generated):
         v1=list(self.pooling(groundtruth))
         v2=list(self.pooling(generated))
-        a=sum(v1[i]*v2[i] for i in range(len(v1)))
-        b=math.sqrt(sum(i**2 for i in v1)) * math.sqrt(sum(i**2 for i in v2))
-	print("a/b is " + str(a/b))
-	print("cosine library is " + str(sp.spatial.distance.cosine(v1, v2)))
-        return a/b
-
+        #a=sum(v1[i]*v2[i] for i in range(len(v1)))
+        #b=math.sqrt(sum(i**2 for i in v1)) * math.sqrt(sum(i**2 for i in v2))
+	#print("a/b is " + str(a/b))
+	#print("cosine library is " + str(sp.spatial.distance.cosine(v1, v2)))
+        #return a/b
+	return sp.spatial.distance.cosine(v1, v2)
     def scores(self, data_dir, fgroundtruth, fgenerated, train_dir=None):
 	if train_dir:
             groundtruth = data_helpers.load_file(train_dir, fgroundtruth)
