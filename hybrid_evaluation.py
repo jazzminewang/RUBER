@@ -69,7 +69,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     train_dir = 'ADEM_data/data'
-    data_dir = 'ADEM_data/data'
+    data_dir = 'data'
     qmax_length, rmax_length = [20, 30]
 
     print("Mode: " + args.mode)
@@ -88,8 +88,9 @@ if __name__ == '__main__':
         fquery = "queries.txt"
         freply = args.reply_file
     else:
-        fquery = "personachat/better_turns/queries.txt"
-        freply = "personachat/better_turns/replies.txt"
+	hybrid_dir = 'data'
+        fquery =  hybrid_fquery = "personachat/better_turns/queries.txt"
+        freply =  hybrid_freply = "personachat/better_turns/replies.txt"
 
     """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
