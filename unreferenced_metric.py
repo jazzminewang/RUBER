@@ -138,8 +138,9 @@ class Unreferenced():
 		self.score = tf.reshape(self.score, [-1]) # [batch_size]
 
 	with tf.variable_scope('train'):
-		# self.pos_score = self.score #for inference, only need the positive score (no negative sampling needed)
+		self.pos_score = self.score #for inference, only need the positive score (no negative sampling needed)
         # calculate losses
+		"""
 		self.pos_score, self.neg_score = tf.split(self.score, 2)
 		losses = margin - self.pos_score + self.neg_score
 		# make loss >= 0
@@ -159,7 +160,8 @@ class Unreferenced():
         with tf.device('/gpu:0'):
             self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
             # global step is just a count of how many times the variables have been updated
-        # checkpoint saver
+        """
+	# checkpoint saver
         self.saver = tf.train.Saver(tf.global_variables())
         # write summary
         self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),
@@ -288,17 +290,23 @@ class Unreferenced():
                         print( s, t)
  #                   """
 
-    def scores(self, data_dir, fquery, freply, fqvocab, frvocab, init=False):
+    def scores(self, data_dir, fquery, freply, fqvocab, frvocab, init=False, train_dir=None):
         if not init:
             self.init_model()
 
-        queries = data_helpers.load_file(data_dir, fquery)
-        replies = data_helpers.load_file(data_dir, freply)
-        data_size = len(queries)
-
-        qvocab = data_helpers.load_vocab(data_dir, fqvocab)
-        rvocab = data_helpers.load_vocab(data_dir, frvocab)
-
+	
+	if train_dir is None: 
+            queries = data_helpers.load_file(data_dir, fquery)
+            replies = data_helpers.load_file(data_dir, freply)
+            qvocab = data_helpers.load_vocab(data_dir, fqvocab)
+            rvocab = data_helpers.load_vocab(data_dir, frvocab)
+	    data_size = len(queries)
+	else:
+            queries = data_helpers.load_file(train_dir, fquery)
+            replies = data_helpers.load_file(train_dir, freply)
+            data_size = len(queries)
+            qvocab = data_helpers.load_vocab(train_dir, fqvocab)
+            rvocab = data_helpers.load_vocab(train_dir, frvocab)
         scores=[]
         with self.session.as_default():
             for query, reply in zip(queries, replies):

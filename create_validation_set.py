@@ -4,12 +4,14 @@ import numpy as np
 from tensorflow.contrib import learn
 from pathlib import Path
 import time
+from shutil import copyfile
+import random
 
 def create_validation_set():
     print("Creating validation set")
-    directory = os.path.join('./data/', 'personachat', 'validation')
-    fquery_filename = os.path.join('./data/', 'personachat', 'validation', "queries.txt")
-    freply = os.path.join('./data/', 'personachat', 'validation', "replies.txt")
+    directory = os.path.join('data/', 'validation_original_personachat')
+    fquery_filename = os.path.join('data/', 'personachat', 'validation', "queries.txt")
+    freply = os.path.join('data/', 'personachat', 'validation', "replies.txt")
 
     for data_filename in os.listdir(directory):
         data_filename = os.path.join(directory, data_filename)
@@ -66,6 +68,12 @@ def create_validation_set():
             datafile.close()
             queries.close()
             replies.close()
+	    copyfile(freply, freply + ".true.sub")
+	    
+	    reply_true = open(freply).readlines()
+	    random.shuffle(reply_true)
+            open(freply + ".sub", "w+").writelines(reply_true)
 
+	    copyfile(fquery_filename, fquery_filename + ".sub")
 if __name__ == '__main__':
     create_validation_set()

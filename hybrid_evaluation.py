@@ -49,12 +49,14 @@ class Hybrid():
 	    ret = [(s - smin) / diff for s in scores]
         return ret
 
-    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab):
-        ref_scores = self.ref.scores(data_dir, freply, fgenerated)
+    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab, train_dir):
+	print("training dir is ")
+	print(train_dir)
+        ref_scores = self.ref.scores(data_dir, freply, fgenerated, train_dir)
         norm_ref_scores = self.normalize(ref_scores, coefficient=2)
         
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
-                fqvocab, frvocab)
+                fqvocab, frvocab, train_dir)
         norm_unref_scores = self.normalize(unref_scores, coefficient=2)
 
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
@@ -74,11 +76,14 @@ if __name__ == '__main__':
 
     if args.mode == "eval_personachat":
         # embedding matrix file for query and reply
-        fquery = "personachat/validation_personachat/queries_validation.txt"
-        freply = "personachat/validation_personachat/replies_validation.txt"
+        fquery = "personachat/validation/queries.txt"
+        freply = "personachat/validation/replies.txt"
         freplies = freply
     elif args.mode == "eval_ADEM":
         data_dir = 'ADEM_data/data'
+	hybrid_dir = 'data'
+	hybrid_fquery = 'personachat/better_turns/queries.txt'
+	hybrid_freply = 'personachat/better_turns/replies.txt'
         fquery = "queries.txt"
         freply = args.reply_file
     else:
@@ -89,7 +94,7 @@ if __name__ == '__main__':
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
     print("Initializing Hybrid object")
-    hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply)
+    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%hybrid_fquery, '%s.embed'%hybrid_freply)
 
     """test"""
     if args.mode != "train":
@@ -98,14 +103,15 @@ if __name__ == '__main__':
 
         if args.mode == "eval_ADEM": 
             print("Scoring ADEM data")
-            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
+	    print("training directory is " + data_dir)
+            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(hybrid_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(hybrid_fquery, qmax_length),'%s.vocab%d'%(hybrid_freply, rmax_length), train_dir=data_dir)
+	    csv_title = './results/' + freply + str(int(time.time())) + '.csv'
         elif args.mode == "eval_personachat":
             scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
-
-        csv_title = './results/' + freply + str(int(time.time())) + '.csv'
+            csv_title = './results/personachat/' +  str(int(time.time())) + '.csv'
 
         """write results to CSV"""
-        with open(csv_title, 'wb') as csvfile:
+        with open(csv_title, 'w+') as csvfile:
             writer = csv.writer(csvfile, delimiter=',')
             # Name the columns
             column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
@@ -113,8 +119,8 @@ if __name__ == '__main__':
             
             if args.mode != "eval_ADEM":
                 fquery = '%s.sub'%fquery
+		true = '%s.true.sub'%freply
                 freply = '%s.sub'%freply
-                true = '%s.true.sub'%freply
             else:
                 true = "true.txt"
 

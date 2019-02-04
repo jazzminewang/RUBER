@@ -74,9 +74,13 @@ class Referenced():
 	print("cosine library is " + str(sp.spatial.distance.cosine(v1, v2)))
         return a/b
 
-    def scores(self, data_dir, fgroundtruth, fgenerated):
-        groundtruth = data_helpers.load_file(data_dir, fgroundtruth)
-        generated = data_helpers.load_file(data_dir, fgenerated)
+    def scores(self, data_dir, fgroundtruth, fgenerated, train_dir=None):
+	if train_dir:
+            groundtruth = data_helpers.load_file(train_dir, fgroundtruth)
+            generated = data_helpers.load_file(train_dir, fgenerated)
+	else:
+            groundtruth = data_helpers.load_file(data_dir, fgroundtruth)
+            generated = data_helpers.load_file(data_dir, fgenerated)
         ret = []
         for t, g in zip(groundtruth, generated):
             ret.append(self.score(t, g))

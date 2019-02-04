@@ -227,8 +227,8 @@ if __name__ == '__main__':
     create embedding files for validation dataset
     """
     # fquery, freply = parse_persona_chat_dataset(data_dir, "personachat/better_turns/")
-    fquery = "personachat/validation_personachat/queries.txt"
-    freply = "personachat/validation_personachat/replies.txt"
+    fquery = "personachat/validation/queries.txt"
+    freply = "personachat/validation/replies.txt"
 
     # Better turns
     # fquery = "personachat/better_turns/queries.txt"
