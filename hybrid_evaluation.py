@@ -49,8 +49,8 @@ class Hybrid():
 	    ret = [(s - smin) / diff for s in scores]
         return ret
 
-    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab, mode=None):
-        ref_scores = self.ref.scores(data_dir, freply, fgenerated, mode)
+    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab):
+        ref_scores = self.ref.scores(data_dir, freply, fgenerated)
         norm_ref_scores = self.normalize(ref_scores, coefficient=2)
         
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
@@ -101,6 +101,7 @@ if __name__ == '__main__':
     print("Initialized hybrid object")
 
     if args.mode == "eval_ADEM": 
+	    print("Scoring ADEM data")
             scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
     else:
             scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
@@ -135,6 +136,6 @@ if __name__ == '__main__':
         max(scores), min(scores), median(scores), mean(scores), median(norm_ref_scores), median(norm_unref_scores), min(unref_scores), max(unref_scores)
     )
 
-    print("Wrote results to " + csv_title)
+    print("Wrote  model results to " + csv_title)
     """train"""
     #hybrid.train_unref(data_dir, fquery, freply)

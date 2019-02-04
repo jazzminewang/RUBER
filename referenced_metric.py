@@ -43,7 +43,8 @@ class Referenced():
 	table = string.maketrans("", "")
         ret = [self.__vector(word.translate(table, string.punctuation)) for word in sentence]
         if len(ret) == 0:
-	    print(sentence + " does not have ret array")
+	    print(sentence)		
+	    print(" does not have ret array")
             return [self.__zeroes_vector()]
         return ret
 
