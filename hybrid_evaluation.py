@@ -71,7 +71,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     train_dir = 'ADEM_data/data'
-    data_dir = 'data'
+    data_dir = hybrid_dir = 'data'
     qmax_length, rmax_length = [20, 30]
 
     print("Mode: " + args.mode)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         freply = args.reply_file
         is_training=False
     else:
-        elif args.mode == "eval_personachat":
+        if args.mode == "eval_personachat":
             is_training=False
 	    hybrid_dir = 'data'
         fquery =  hybrid_fquery = "personachat/better_turns/queries.txt"
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
     print("Initializing Hybrid object")
-    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%fquery, is_training)
+    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%fquery, is_training=is_training)
 
     if args.mode == "eval_personachat":
         # use validation queries and replies
