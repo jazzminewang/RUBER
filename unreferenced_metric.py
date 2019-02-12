@@ -24,7 +24,8 @@ class Unreferenced():
             init_learning_rate=1e-4,
             l2_regular=0.1,
             margin=0.5,
-            train_dir='train_data/'
+            train_dir='train_data/',
+            is_training=True
             ):
         """
         Initialize related variables and construct the neural network graph.
@@ -138,37 +139,40 @@ class Unreferenced():
 		self.score = tf.reshape(self.score, [-1]) # [batch_size]
 
 	with tf.variable_scope('train'):
-		self.pos_score = self.score #for inference, only need the positive score (no negative sampling needed)
-        # calculate losses
-		"""
-		self.pos_score, self.neg_score = tf.split(self.score, 2)
-		losses = margin - self.pos_score + self.neg_score
-		# make loss >= 0
-		losses = tf.clip_by_value(losses, 0.0, 100.0)
-		self.loss = tf.reduce_mean(losses) # self.loss = tensor
-		# optimizer
-		self.learning_rate = tf.Variable(init_learning_rate,
-			trainable=False, name="learning_rate")
-		self.learning_rate_decay_op = \
-		    self.learning_rate.assign(self.learning_rate*0.99)
-		
-		# adam backprop as mentioned in paper
-		optimizer = tf.train.AdamOptimizer(self.learning_rate)
-		self.global_step = tf.Variable(0, trainable=False,
-			name="global_step")
-        # training op
-        with tf.device('/gpu:0'):
-            self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
-            # global step is just a count of how many times the variables have been updated
-        """
-	# checkpoint saver
-        self.saver = tf.train.Saver(tf.global_variables())
-        # write summary
-        self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),
-                self.session.graph)
-        self.summary = tf.Summary()
-	print(self.summary)
-	
+        if not is_training:
+		    self.pos_score = self.score #for inference, only need the positive score (no negative sampling needed)
+            # calculate losses
+        else:
+            self.pos_score, self.neg_score = tf.split(self.score, 2)
+            losses = margin - self.pos_score + self.neg_score
+            # make loss >= 0
+            losses = tf.clip_by_value(losses, 0.0, 100.0)
+            self.loss = tf.reduce_mean(losses) # self.loss = tensor
+            # optimizer
+            self.learning_rate = tf.Variable(init_learning_rate,
+                trainable=False, name="learning_rate")
+            self.learning_rate_decay_op = \
+                self.learning_rate.assign(self.learning_rate*0.99)
+            
+            # adam backprop as mentioned in paper
+            optimizer = tf.train.AdamOptimizer(self.learning_rate)
+            self.global_step = tf.Variable(0, trainable=False,
+                name="global_step")
+            # training op
+            with tf.device('/gpu:0'):
+                self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
+                # global step is just a count of how many times the variables have been updated
+
+            # checkpoint saver
+                self.saver = tf.train.Saver(tf.global_variables())
+                # write summary
+                self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),
+                        self.session.graph)
+                self.validation_writer=tf.summary.FileWriter(os.path.join(train_dir, 'val_logs/'),
+                        self.session.graph)                        
+                self.summary = tf.Summary()
+            print(self.summary)
+
 
     def get_batch(self, data, data_size, batch_size, idx=None):
         """
@@ -253,7 +257,6 @@ class Unreferenced():
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
         data_size = len(queries)
-        print("data size is " + str(data_size))
         print_score = tf.print(self.score)
         with self.session.as_default():
             self.init_model()

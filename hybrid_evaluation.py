@@ -19,7 +19,8 @@ class Hybrid():
             qmax_length=20,
             rmax_length=30,
             ref_method='max_min',
-            gru_units=128, mlp_units=[256, 512, 128]
+            gru_units=128, mlp_units=[256, 512, 128],
+            is_training=True
         ):
         print("Initializing referenced model")
         self.ref=Referenced(data_dir, frword2vec, ref_method)
@@ -28,7 +29,8 @@ class Hybrid():
                 os.path.join(data_dir,fqembed),
                 os.path.join(data_dir,frembed),
                 gru_units, mlp_units,
-                train_dir=train_dir)
+                train_dir=train_dir, 
+                is_training=is_training)
 
     def train_unref(self, data_dir, fquery, freply):
         print("training unreferenced metric")
@@ -73,6 +75,7 @@ if __name__ == '__main__':
     qmax_length, rmax_length = [20, 30]
 
     print("Mode: " + args.mode)
+    is_training=True
 
     if args.mode == "eval_ADEM":
         data_dir = 'ADEM_data/data'
@@ -81,8 +84,11 @@ if __name__ == '__main__':
         hybrid_freply = 'personachat/better_turns/replies.txt'
         fquery = "queries.txt"
         freply = args.reply_file
+        is_training=False
     else:
-	hybrid_dir = 'data'
+        elif args.mode == "eval_personachat":
+            is_training=False
+	    hybrid_dir = 'data'
         fquery =  hybrid_fquery = "personachat/better_turns/queries.txt"
         freply =  hybrid_freply = "personachat/better_turns/replies.txt"
 
@@ -90,7 +96,7 @@ if __name__ == '__main__':
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
     print("Initializing Hybrid object")
-    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%fquery)
+    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%fquery, is_training)
 
     if args.mode == "eval_personachat":
         # use validation queries and replies
