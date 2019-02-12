@@ -144,7 +144,8 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
     freply_filename = os.path.join(processed_data_dir, "replies.txt")
     fquery_file = Path(fquery_filename)
     freply_file = Path(freply_filename)
-
+    fquery_short = "queries.txt" 
+    freply_short = "replies.txt"
     if not fquery_file.exists() and not freply_file.exists():
         print("Creating queries and replies dataset")
         
@@ -197,7 +198,7 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
                 datafile.close()
                 queries.close()
                 replies.close()
-    return fquery_filename, freply_filename
+    return fquery_short, freply_short
 
 # Run this first to create the embedding matrix ? 
 if __name__ == '__main__':
@@ -221,7 +222,7 @@ if __name__ == '__main__':
     fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
     if args.validate:
         print("Also parsing validation dataset")
-        fquery_validate, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
+        fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
 
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
@@ -231,15 +232,15 @@ if __name__ == '__main__':
 
     # make sure embed and vocab file paths are correct
 
-    process_train_file(processed_train_dir, fquery, query_max_length)
-    process_train_file(processed_train_dir, freply, reply_max_length)
+    process_train_file(processed_train_dir, fquery_train, query_max_length)
+    process_train_file(processed_train_dir, freply_train, reply_max_length)
 
-    fqvocab = '%s.vocab%d'%(fquery, query_max_length)
-    frvocab = '%s.vocab%d'%(freply, reply_max_length)
+    fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
+    frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
 
     word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
-    make_embedding_matrix(processed_train_dir, fquery, word2vec, vec_dim, fqvocab)
+    make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
 
     word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
-    make_embedding_matrix(processed_train_dir, freply, word2vec, vec_dim, frvocab)
+    make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
     pass
