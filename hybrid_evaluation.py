@@ -74,17 +74,11 @@ if __name__ == '__main__':
 
     print("Mode: " + args.mode)
 
-    if args.mode == "eval_personachat":
-        # embedding matrix file for query and reply
-        fquery = "personachat/validation/queries.txt"
-        freply = "personachat/validation/replies.txt"
-	hybrid_dir = 'data'
-        freplies = freply
-    elif args.mode == "eval_ADEM":
+    if args.mode == "eval_ADEM":
         data_dir = 'ADEM_data/data'
-	hybrid_dir = 'data'
-	hybrid_fquery = 'personachat/better_turns/queries.txt'
-	hybrid_freply = 'personachat/better_turns/replies.txt'
+        hybrid_dir = 'data'
+        hybrid_fquery = 'personachat/better_turns/queries.txt'
+        hybrid_freply = 'personachat/better_turns/replies.txt'
         fquery = "queries.txt"
         freply = args.reply_file
     else:
@@ -96,7 +90,12 @@ if __name__ == '__main__':
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
     print("Initializing Hybrid object")
-    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%hybrid_fquery, '%s.embed'%hybrid_freply)
+    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%fquery)
+
+    if args.mode == "eval_personachat":
+        # use validation queries and replies
+        fquery = "personachat/validation/queries.txt"
+        freply = "personachat/validation/replies.txt"
 
     """test"""
     if args.mode != "train":

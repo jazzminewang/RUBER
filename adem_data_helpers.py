@@ -23,20 +23,20 @@ from itertools import izip
 # separate results.csv for each query/reply pair of files
 
 
-def load_adem_data(data_dir):
-    with open(data_dir + '/models.pkl', 'rb') as models, \
-        open(data_dir + '/clean_data.pkl', 'rb') as scores, \
-            open(data_dir + '/contexts.pkl', 'rb') as queries_and_replies_pickle, \
-                open(data_dir + '/queries.txt', 'w+') as queries, \
-                    open(data_dir + '/human_replies.txt', 'w+') as human_replies, \
-                        open(data_dir + '/hred_replies.txt', 'w+') as hred_replies, \
-                            open(data_dir + '/de_replies.txt', 'w+') as de_replies, \
-                                open(data_dir + '/tfidf_replies.txt', 'w+') as tfidf_replies,\
-                                    open(data_dir + '/context_ids.txt', 'w+') as context_ids, \
-                                        open(data_dir + '/human_scores.txt', 'w+') as human_scores, \
-                                            open(data_dir + '/hred_scores.txt', 'w+') as hred_scores, \
-                                                open(data_dir + '/de_scores.txt', 'w+') as de_scores, \
-                                                    open(data_dir + '/tfidf_scores.txt', 'w+') as tfidf_scores:
+def load_adem_data(raw_data_dir, processed_data_dir):
+    with open(raw_data_dir + '/models.pkl', 'rb') as models, \
+        open(raw_data_dir + '/clean_data.pkl', 'rb') as scores, \
+            open(raw_data_dir + '/contexts.pkl', 'rb') as queries_and_replies_pickle, \
+                open(processed_data_dir + '/queries.txt', 'w+') as queries, \
+                    open(processed_data_dir + '/human_replies.txt', 'w+') as human_replies, \
+                        open(processed_data_dir + '/hred_replies.txt', 'w+') as hred_replies, \
+                            open(processed_data_dir + '/de_replies.txt', 'w+') as de_replies, \
+                                open(processed_data_dir + '/tfidf_replies.txt', 'w+') as tfidf_replies,\
+                                    open(processed_data_dir + '/context_ids.txt', 'w+') as context_ids, \
+                                        open(processed_data_dir + '/human_scores.txt', 'w+') as human_scores, \
+                                            open(processed_data_dir + '/hred_scores.txt', 'w+') as hred_scores, \
+                                                open(processed_data_dir + '/de_scores.txt', 'w+') as de_scores, \
+                                                    open(processed_data_dir + '/tfidf_scores.txt', 'w+') as tfidf_scores:
                 def write_scores_to_file(context_id, model_type, index):
                     score_key = "overall" + str(index)
                     print("Looking for context id " + str(context_id) + " for " + model_type)
@@ -190,12 +190,16 @@ def write_adem_to_csv(data_dir):
 
             
 if __name__ == '__main__':
-    data_dir = './ADEM_data/data'
+    raw_data_dir = './data/ADEM_data/raw_data'
+    processed_data_dir = './data/ADEM_data/processed_data'
+    word2vec_dir = './data'
+
     query_max_length, reply_max_length = [20, 30]
     print("Loading ADEM data")
-    load_adem_data(data_dir)
+    load_adem_data(raw_data_dir, processed_data_dir)
+
     print("Writing data to CSV")
-    write_adem_to_csv(data_dir)
+    write_adem_to_csv(processed_data_dir)
 
     fquery = "queries.txt"
     freply1 = "human_replies.txt"
@@ -208,11 +212,11 @@ if __name__ == '__main__':
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
     # print("Processing training files")
-    process_train_file(data_dir, fquery, query_max_length)
-    process_train_file(data_dir, freply1, reply_max_length)
-    process_train_file(data_dir, freply2, reply_max_length)
-    process_train_file(data_dir, freply3, reply_max_length)
-    process_train_file(data_dir, freply4, reply_max_length)
+    process_train_file(processed_data_dir, fquery, query_max_length)
+    process_train_file(processed_data_dir, freply1, reply_max_length)
+    process_train_file(processed_data_dir, freply2, reply_max_length)
+    process_train_file(processed_data_dir, freply3, reply_max_length)
+    process_train_file(processed_data_dir, freply4, reply_max_length)
 
     fqvocab = '%s.vocab%d'%(fquery, query_max_length)
     frvocab1 = '%s.vocab%d'%(freply1, reply_max_length)
@@ -220,12 +224,12 @@ if __name__ == '__main__':
     frvocab3 = '%s.vocab%d'%(freply3, reply_max_length)
     frvocab4 = '%s.vocab%d'%(freply4, reply_max_length)
 
-    word2vec, vec_dim, _ = load_word2vec(data_dir, fqword2vec)
-    make_embedding_matrix(data_dir, fquery, word2vec, vec_dim, fqvocab)
+    word2vec, vec_dim, _ = load_word2vec(word2vec_dir, fqword2vec)
+    make_embedding_matrix(processed_data_dir, fquery, word2vec, vec_dim, fqvocab)
 
-    word2vec, vec_dim, _ = load_word2vec(data_dir, frword2vec)
-    make_embedding_matrix(data_dir, freply1, word2vec, vec_dim, frvocab1)
-    make_embedding_matrix(data_dir, freply2, word2vec, vec_dim, frvocab2)
-    make_embedding_matrix(data_dir, freply3, word2vec, vec_dim, frvocab3)
-    make_embedding_matrix(data_dir, freply4, word2vec, vec_dim, frvocab4)
+    word2vec, vec_dim, _ = load_word2vec(word2vec_dir, frword2vec)
+    make_embedding_matrix(processed_data_dir, freply1, word2vec, vec_dim, frvocab1)
+    make_embedding_matrix(processed_data_dir, freply2, word2vec, vec_dim, frvocab2)
+    make_embedding_matrix(processed_data_dir, freply3, word2vec, vec_dim, frvocab3)
+    make_embedding_matrix(processed_data_dir, freply4, word2vec, vec_dim, frvocab4)
     pass

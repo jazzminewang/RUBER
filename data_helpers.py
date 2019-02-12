@@ -6,16 +6,13 @@ import numpy as np
 from tensorflow.contrib import learn
 from pathlib import Path
 import time
+import argparse
 
 def tokenizer(iterator):
     for value in iterator:
         yield value.split()
 
 def load_file(data_dir, fname):
-    
-   
-  
- 
     fname = os.path.join(data_dir, fname)
     print 'Loading file %s'%(fname)
     lines = open(fname).readlines()
@@ -137,38 +134,29 @@ def load_word2vec(data_dir, fword2vec):
             vecs[ps[0]] = map(float, ps[1:])
     return vecs, vec_dim, size
 
-def parse_persona_chat_dataset(data_dir, persona_chat_dir):
+def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
     """
     Return:
         file path to file with all queries
         file path to file with all replies
     """
-    print("Entering parse")
-    fquery_filename = os.path.join(data_dir, persona_chat_dir, "queries.txt")
-    freply_filename = os.path.join(data_dir, persona_chat_dir, "replies.txt")
+    fquery_filename = os.path.join(processed_data_dir, "queries.txt")
+    freply_filename = os.path.join(processed_data_dir, "replies.txt")
     fquery_file = Path(fquery_filename)
     freply_file = Path(freply_filename)
 
-    fquery_filename_short = os.path.join(persona_chat_dir, "queries.txt")
-    freply_filename_short = os.path.join(persona_chat_dir, "replies.txt")
-
     if not fquery_file.exists() and not freply_file.exists():
         print("Creating queries and replies dataset")
-        directory = os.path.join(data_dir, "personachat")
         
-	for data_filename in os.listdir(directory):
+	for data_filename in os.listdir(raw_data_dir):
             if "train" in data_filename and "no_cand" in data_filename and "revised" in data_filename:
-                data_filename = os.path.join(data_dir, "personachat", data_filename)
-                # parse files with 
+                data_filename = os.path.join(raw_data_dir, data_filename)
                 with open(data_filename, "r") as datafile, \
                     open(fquery_filename, "w+") as queries, \
                         open(freply_filename, "w+") as replies:
 
                     lines = datafile.readlines()
                     filtered_lines = [line for line in lines if 'persona:' not in line]
-                    print("Example filtered line")
-                    print(filtered_lines[0])
-
                     new_conversation = True
 
                     # change to new conversation if next line is a smaller number --> omitting last line edge case
@@ -180,16 +168,12 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir):
                         
                         if new_conversation:
                             # add first part only as query
-                            print("new conversation")
                             queries.write(split[0] + "\n")
-                            print("wrote " + split[0] + " to queries")
                             if len(split) > 1:
                                 replies.write(split[1])
                                 queries.write(split[1])
-                                print("wrote " + split[1] + " to queries and replies")
                             new_conversation = False
                         elif next_number < number:
-                            print("ending conversation")
                             # next line is new conversation, so add last part as only a reply
                             new_conversation = True
                             if len(split) > 1:
@@ -199,7 +183,6 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir):
                             else:
                                 replies.write(split[0])
                         else:
-                            print("continuing conversation")
                             #write both parts as queries and replies
                             if len(split) > 1:
                                 replies.write(split[0])
@@ -214,39 +197,49 @@ def parse_persona_chat_dataset(data_dir, persona_chat_dir):
                 datafile.close()
                 queries.close()
                 replies.close()
-    return fquery_filename_short, freply_filename_short
+    return fquery_filename, freply_filename
 
 # Run this first to create the embedding matrix ? 
 if __name__ == '__main__':
-    data_dir = './data'
+    raw_data_dir = './data'
+    processed_train_dir = './data/personachat/better_turns/'
+    processed_validation_dir = './data/personachat/validation/'
     query_max_length, reply_max_length = [20, 30]
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-validate', help="pass in validate only if you want to create validation data") 
+
+    args = parser.parse_args()
 
     """
     PERSONA CHAT
     modes: create training dataset
     create embedding files for validation dataset
     """
-    # fquery, freply = parse_persona_chat_dataset(data_dir, "personachat/better_turns/")
-    fquery = "personachat/validation/queries.txt"
-    freply = "personachat/validation/replies.txt"
+    print("Parsing persona chat datasets")
 
-    # Better turns
-    # fquery = "personachat/better_turns/queries.txt"
-    # freply = "personachat/better_turns/replies.txt"
+    fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
+    if args.validate:
+        print("Also parsing validation dataset")
+        fquery_validate, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
 
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
     frword2vec = 'GoogleNews-vectors-negative300.txt'
-    print("Processing training files")
-    process_train_file(data_dir, fquery, query_max_length)
-    process_train_file(data_dir, freply, reply_max_length)
+
+    print("Processing training files into vocab and embedding files")
+
+    # make sure embed and vocab file paths are correct
+
+    process_train_file(processed_train_dir, fquery, query_max_length)
+    process_train_file(processed_train_dir, freply, reply_max_length)
 
     fqvocab = '%s.vocab%d'%(fquery, query_max_length)
     frvocab = '%s.vocab%d'%(freply, reply_max_length)
 
-    word2vec, vec_dim, _ = load_word2vec(data_dir, fqword2vec)
-    make_embedding_matrix(data_dir, fquery, word2vec, vec_dim, fqvocab)
+    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
+    make_embedding_matrix(processed_train_dir, fquery, word2vec, vec_dim, fqvocab)
 
-    word2vec, vec_dim, _ = load_word2vec(data_dir, frword2vec)
-    make_embedding_matrix(data_dir, freply, word2vec, vec_dim, frvocab)
+    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
+    make_embedding_matrix(processed_train_dir, freply, word2vec, vec_dim, frvocab)
     pass
