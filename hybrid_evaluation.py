@@ -96,7 +96,7 @@ if __name__ == '__main__':
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
     print("Initializing Hybrid object")
-    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%fquery, is_training=is_training)
+    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply, is_training=is_training)
 
     if args.mode == "eval_personachat":
         # use validation queries and replies

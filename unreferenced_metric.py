@@ -8,7 +8,6 @@ import numpy as np
 import tensorflow as tf
 import data_helpers
 import pdb
-from hybrid_evalution import normalize
 
 class Unreferenced():
     """Unreferenced Metric
@@ -166,10 +165,7 @@ class Unreferenced():
                 	self.saver = tf.train.Saver(tf.global_variables())
                 	# write summary
                 	self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),self.session.graph)
-	                self.validation_writer=tf.summary.FileWriter(os.path.join(train_dir, 'val_logs/'),
-                        self.session.graph)                        
         	        self.summary = tf.Summary()
-            		print(self.summary)
 
 
     def get_batch(self, data, data_size, batch_size, idx=None):
@@ -256,10 +252,11 @@ class Unreferenced():
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
 
-        validation_queries = data_helpers.load_data("data/personachat/validation_ADEM", "queries.txt", self.qmax_length)
-        validation_replies = data_helpers.load_data("data/personachat/validation_ADEM", "hred_replies.txt", self.rmax_length)
-        scores = data_helpers.load_data("data/personachat/validation_ADEM", "hred_scores.txt", self.rmax_length)
+        validation_queries = data_helpers.load_data("data/validation_ADEM","queries.txt", self.qmax_length)
+	validation_replies = data_helpers.load_data("data/validation_ADEM","hred_replies.txt", self.rmax_length)
+        scores = data_helpers.load_file("data/validation_ADEM", "hred_scores.txt")
         scores = [float(score) for score in scores]
+	#TODO - calculate MSE against these scores? 
 
         data_size = len(queries)
         print_score = tf.print(self.score)
@@ -275,11 +272,11 @@ class Unreferenced():
             while True: 
                 step, l = self.train_step(queries, replies, data_size, batch_size)
                 # KEVIN DOES THIS TRAIN THE MODEL ON THE VALIDATION SET :(
-                validation_l = self.train_step(validation_queries, validation_replies, len(validation_queries), batch_size)
+                _, validation_l = self.train_step(validation_queries, validation_replies, len(validation_queries), batch_size)
 
                 loss += l  
                 validation_loss += validation_l
-
+		print(validation_loss)
                 # save checkpoint
                 if step % steps_per_checkpoint == 0:
                     loss /= steps_per_checkpoint 
@@ -290,6 +287,8 @@ class Unreferenced():
                     if validation_loss < best_validation_loss:
                         best_validation_loss = validation_loss
                         impatience = 0.0
+			self.saver.save(self.session, checkpoint_path,
+                            global_step=self.global_step)
                     else:
                         impatience += 1
                 
@@ -301,8 +300,6 @@ class Unreferenced():
                     prev_losses = (prev_losses+[loss])[-5:]
                     loss = 0.0
 
-                    self.saver.save(self.session, checkpoint_path,
-                            global_step=self.global_step)
                     self.log_writer.add_summary(self.summary, step)
 
 #                    """ Debug
