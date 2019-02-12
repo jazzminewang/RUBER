@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 import data_helpers
 import pdb
+from hybrid_evalution import normalize
 
 class Unreferenced():
     """Unreferenced Metric
@@ -235,6 +236,7 @@ class Unreferenced():
         output_feed = [self.global_step, self.train_op, self.loss]
         step, _, loss = self.session.run(output_feed, feed_dict)
 
+
         return step, loss
 
     def init_model(self):
@@ -253,6 +255,12 @@ class Unreferenced():
             batch_size=128, steps_per_checkpoint=100):
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
+
+        validation_queries = data_helpers.load_data("data/personachat/validation_ADEM", "queries.txt", self.qmax_length)
+        validation_replies = data_helpers.load_data("data/personachat/validation_ADEM", "hred_replies.txt", self.rmax_length)
+        scores = data_helpers.load_data("data/personachat/validation_ADEM", "hred_scores.txt", self.rmax_length)
+        scores = [float(score) for score in scores]
+
         data_size = len(queries)
         print_score = tf.print(self.score)
         with self.session.as_default():
@@ -260,16 +268,33 @@ class Unreferenced():
 
             checkpoint_path = os.path.join(self.train_dir, "unref.model")
             loss = 0.0
-            prev_losses = [1.0] # why is this 1?
-            while True: # trains forever (you can also train until convergence)
+            validation_loss = 0.0
+            best_validation_loss = 1000
+            prev_losses = [1.0] 
+            impatience = 0.0
+            while True: 
                 step, l = self.train_step(queries, replies, data_size, batch_size)
-                loss += l  # why adding loss instead of replacing it? 
+                # KEVIN DOES THIS TRAIN THE MODEL ON THE VALIDATION SET :(
+                validation_l = self.train_step(validation_queries, validation_replies, len(validation_queries), batch_size)
+
+                loss += l  
+                validation_loss += validation_l
 
                 # save checkpoint
                 if step % steps_per_checkpoint == 0:
-                    loss /= steps_per_checkpoint # avg loss per step
+                    loss /= steps_per_checkpoint 
+                    validation_loss /= steps_per_checkpoint
                     print ("global_step %d, loss %f, learning rate %f"  \
                             %(step, loss, self.learning_rate.eval()))
+
+                    if validation_loss < best_validation_loss:
+                        best_validation_loss = validation_loss
+                        impatience = 0.0
+                    else:
+                        impatience += 1
+                
+                    print("Validation loss is %f. The best loss thus far has been %f. Impatience: %f" \
+                        %(validation_loss, best_validation_loss, impatience))
 
                     if loss > max(prev_losses):
                         self.session.run(self.learning_rate_decay_op)
@@ -289,6 +314,7 @@ class Unreferenced():
                     for s, t in zip(score[:10], tests[:10]):
                         print( s, t)
  #                   """
+
 
     def scores(self, data_dir, fquery, freply, fqvocab, frvocab, init=False, train_dir=None):
         if not init:
