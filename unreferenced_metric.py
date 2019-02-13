@@ -236,6 +236,7 @@ class Unreferenced():
 
         output_feed = [self.global_step, self.train_op, self.loss]
         step, _, loss = self.session.run(output_feed, feed_dict)
+        # 
 
         return step, loss
 
@@ -256,12 +257,6 @@ class Unreferenced():
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
 
-        validation_queries = data_helpers.load_data("data/validation_ADEM","queries.txt", self.qmax_length)
-	validation_replies = data_helpers.load_data("data/validation_ADEM","hred_replies.txt", self.rmax_length)
-        scores = data_helpers.load_file("data/validation_ADEM", "hred_scores.txt")
-        scores = [float(score) for score in scores]
-	#TODO - calculate MSE against these scores? 
-
         data_size = len(queries)
         print_score = tf.print(self.score)
         with self.session.as_default():
@@ -269,35 +264,17 @@ class Unreferenced():
 
             checkpoint_path = os.path.join(self.train_dir, "unref.model")
             loss = 0.0
-            validation_loss = 0.0
-            best_validation_loss = 1000
             prev_losses = [1.0] 
-            impatience = 0.0
             while True: 
                 step, l = self.train_step(queries, replies, data_size, batch_size)
-                # KEVIN DOES THIS TRAIN THE MODEL ON THE VALIDATION SET :(
                 _, validation_l = self.get_validation_loss(validation_queries, validation_replies, len(validation_queries), batch_size)
 
                 loss += l  
-                validation_loss += validation_l
-		print(validation_loss)
                 # save checkpoint
                 if step % steps_per_checkpoint == 0:
                     loss /= steps_per_checkpoint 
-                    validation_loss /= steps_per_checkpoint
                     print ("global_step %d, loss %f, learning rate %f"  \
                             %(step, loss, self.learning_rate.eval()))
-
-                    if validation_loss < best_validation_loss:
-                        best_validation_loss = validation_loss
-                        impatience = 0.0
-			self.saver.save(self.session, checkpoint_path,
-                            global_step=self.global_step)
-                    else:
-                        impatience += 1
-                
-                    print("Validation loss is %f. The best loss thus far has been %f. Impatience: %f" \
-                        %(validation_loss, best_validation_loss, impatience))
 
                     if loss > max(prev_losses):
                         self.session.run(self.learning_rate_decay_op)
@@ -305,6 +282,8 @@ class Unreferenced():
                     loss = 0.0
 
                     self.log_writer.add_summary(self.summary, step)
+                    self.saver.save(self.session, checkpoint_path,
+                            global_step=self.global_step)
 
 #                    """ Debug
                     query_batch, query_sizes, idx = self.get_batch(queries, data_size, 10)

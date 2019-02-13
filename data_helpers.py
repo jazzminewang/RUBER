@@ -134,6 +134,47 @@ def load_word2vec(data_dir, fword2vec):
             vecs[ps[0]] = map(float, ps[1:])
     return vecs, vec_dim, size
 
+def parse_twitter_dataset(raw_data_dir, processed_data_dir):
+    # end-of-utterance: </s>
+    # end-of-dialogue: </d>
+    # first speaker: <first_speaker>
+    # second speaker: <second_speaker>
+    # third speaker: <third_speaker>
+    # minor speaker: <minor_speaker>
+    # voice over: <voice_over>
+    # off screen: <off_screen>
+    # pause: <pause>
+    
+    # one dialogue per line
+
+    fquery_filename = os.path.join(processed_data_dir, "queries.txt")
+    freply_filename = os.path.join(processed_data_dir, "replies.txt")
+    fquery_file = Path(fquery_filename)
+    freply_file = Path(freply_filename)
+    fquery_short = "queries.txt" 
+    freply_short = "replies.txt"
+    if not fquery_file.exists() and not freply_file.exists():
+        print("Creating queries and replies dataset from twitter dataset")
+        
+	for data_filename in os.listdir(raw_data_dir):
+            if "train" in data_filename and "no_cand" in data_filename and "revised" in data_filename:
+                data_filename = os.path.join(raw_data_dir, data_filename)
+                with open(data_filename, "r") as datafile, \
+                    open(fquery_filename, "w+") as queries, \
+                        open(freply_filename, "w+") as replies:
+
+                    lines = datafile.readlines()
+
+                    for line in lines:
+                        dialogue = filter(None, line.split("</s>"))
+                        for i in range(0, len(dialogue) - 2):
+                            query = dialogue[i].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
+                            reply = dialogue[i + 1].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
+                            queries.write(query)
+                            replies.write(reply)
+    return fquery_short, freply_short
+      
+
 def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
     """
     Return:
@@ -147,7 +188,7 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
     fquery_short = "queries.txt" 
     freply_short = "replies.txt"
     if not fquery_file.exists() and not freply_file.exists():
-        print("Creating queries and replies dataset")
+        print("Creating queries and replies dataset from personachat")
         
 	for data_filename in os.listdir(raw_data_dir):
             if "train" in data_filename and "no_cand" in data_filename and "revised" in data_filename:
@@ -208,6 +249,7 @@ if __name__ == '__main__':
     query_max_length, reply_max_length = [20, 30]
 
     parser = argparse.ArgumentParser()
+    parse.add_argument('-twitter', help="pass in twitter only if you want to create training dataset from twitter")
     parser.add_argument('-validate', help="pass in validate only if you want to create validation data") 
 
     args = parser.parse_args()
@@ -219,7 +261,12 @@ if __name__ == '__main__':
     """
     print("Parsing persona chat datasets")
 
-    fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
+    if args.twitter:
+        processed_train_dir = "./data/twitter_data/train/"
+        fquery_train, freply_train = parse_twitter_dataset(raw_data_dir, processed_train_dir)
+    else:
+        fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
+
     if args.validate:
         print("Also parsing validation dataset")
         fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
@@ -232,15 +279,15 @@ if __name__ == '__main__':
 
     # make sure embed and vocab file paths are correct
 
-    process_train_file(processed_train_dir, fquery_train, query_max_length)
-    process_train_file(processed_train_dir, freply_train, reply_max_length)
+    # process_train_file(processed_train_dir, fquery_train, query_max_length)
+    # process_train_file(processed_train_dir, freply_train, reply_max_length)
 
-    fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
-    frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
+    # fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
+    # frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
 
-    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
-    make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
+    # word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
+    # make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
 
-    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
-    make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
+    # word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
+    # make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
     pass
