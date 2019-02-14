@@ -157,8 +157,10 @@ def parse_twitter_dataset(raw_data_dir, processed_data_dir):
         print("Creating queries and replies dataset from twitter dataset")
         
 	for data_filename in os.listdir(raw_data_dir):
-            if "train" in data_filename and "no_cand" in data_filename and "revised" in data_filename:
-                data_filename = os.path.join(raw_data_dir, data_filename)
+		if data_filename == "train.txt":
+                    data_filename = os.path.join(raw_data_dir, data_filename)
+		else:
+		    continue
                 with open(data_filename, "r") as datafile, \
                     open(fquery_filename, "w+") as queries, \
                         open(freply_filename, "w+") as replies:
@@ -249,7 +251,7 @@ if __name__ == '__main__':
     query_max_length, reply_max_length = [20, 30]
 
     parser = argparse.ArgumentParser()
-    parse.add_argument('-twitter', help="pass in twitter only if you want to create training dataset from twitter")
+    parser.add_argument('-twitter', help="pass in twitter only if you want to create training dataset from twitter")
     parser.add_argument('-validate', help="pass in validate only if you want to create validation data") 
 
     args = parser.parse_args()
@@ -259,12 +261,15 @@ if __name__ == '__main__':
     modes: create training dataset
     create embedding files for validation dataset
     """
-    print("Parsing persona chat datasets")
+    
 
     if args.twitter:
+	print("Parsing twitter dataset")
+	raw_data_dir = "./data/twitter_data"
         processed_train_dir = "./data/twitter_data/train/"
         fquery_train, freply_train = parse_twitter_dataset(raw_data_dir, processed_train_dir)
     else:
+	print("Parsing persona chat dataset")
         fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
 
     if args.validate:
@@ -277,17 +282,17 @@ if __name__ == '__main__':
 
     print("Processing training files into vocab and embedding files")
 
-    # make sure embed and vocab file paths are correct
+    #make sure embed and vocab file paths are correct
+    raw_data_dir = "./data"
+    process_train_file(processed_train_dir, fquery_train, query_max_length)
+    process_train_file(processed_train_dir, freply_train, reply_max_length)
 
-    # process_train_file(processed_train_dir, fquery_train, query_max_length)
-    # process_train_file(processed_train_dir, freply_train, reply_max_length)
+    fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
+    frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
 
-    # fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
-    # frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
+    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
+    make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
 
-    # word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
-    # make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
-
-    # word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
-    # make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
+    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
+    make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
     pass
