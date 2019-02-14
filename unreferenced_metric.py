@@ -238,6 +238,7 @@ class Unreferenced():
         step, _, loss = self.session.run(output_feed, feed_dict)
         # 
 
+
         return step, loss
 
     def init_model(self):
@@ -245,6 +246,7 @@ class Unreferenced():
         Initialize all variables or load model from checkpoint
         """
         ckpt = tf.train.get_checkpoint_state(self.train_dir)
+	print("training dir is " + self.train_dir)
         if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
             print ('Restoring model from %s'%ckpt.model_checkpoint_path)
             self.saver.restore(self.session, ckpt.model_checkpoint_path)
@@ -301,7 +303,7 @@ class Unreferenced():
 	    print("not inited, initing now")
             self.init_model()
 
-	train_dir = "ADEM_data/data"	
+	#train_dir = "ADEM_data/data"	
 	if train_dir is None: 
             queries = data_helpers.load_file(data_dir, fquery)
             replies = data_helpers.load_file(data_dir, freply)

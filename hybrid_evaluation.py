@@ -92,6 +92,7 @@ if __name__ == '__main__':
 	if args.dataset == "twitter":
              fquery =  hybrid_fquery = "twitter_data/train/queries.txt"
              freply =  hybrid_freply = "twitter_data/train/replies.txt"
+	     train_dir = "twitter_data/train"
         else:
 	     fquery =  hybrid_fquery = "personachat/better_turns/queries.txt"
              freply =  hybrid_freply = "personachat/better_turns/replies.txt"
@@ -153,4 +154,5 @@ if __name__ == '__main__':
     else:
         """train"""
         print("Training")
+	print("Data dir is " + data_dir)
         hybrid.train_unref(data_dir, fquery, freply)
