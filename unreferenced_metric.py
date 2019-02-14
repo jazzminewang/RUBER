@@ -85,7 +85,7 @@ class Unreferenced():
                         # [batch_size, sequence_length]
                         shape=[None, self.qmax_length],
                         name="query_inputs")
-                with tf.device('/gpu:0'):
+                with tf.device('/gpu:1'):
                     query_embedding = get_birnn_embedding(
                             self.query_sizes, self.query_inputs,
                             qembed, 'query_rgu_birnn')
@@ -97,7 +97,7 @@ class Unreferenced():
                 self.reply_inputs = tf.placeholder(tf.int32,
                         shape=[None, self.rmax_length],
                         name="reply_inputs")
-                with tf.device('/gpu:0'):
+                with tf.device('/gpu:1'):
                     reply_embedding = get_birnn_embedding(
                         self.reply_sizes, self.reply_inputs,
                         rembed, 'reply_gru_birnn')
@@ -157,12 +157,12 @@ class Unreferenced():
             		optimizer = tf.train.AdamOptimizer(self.learning_rate)
             		self.global_step = tf.Variable(0, trainable=False,name="global_step")
             		# training op
-            	with tf.device('/gpu:0'):
+            	with tf.device('/gpu:1'):
                 	self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
                 	# global step is just a count of how many times the variables have been updated
 
             		# checkpoint saver
-                	self.saver = tf.train.Saver(tf.global_variables())
+                	self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
                 	# write summary
                 	self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),self.session.graph)
         	        self.summary = tf.Summary()
@@ -192,13 +192,10 @@ class Unreferenced():
     def make_input_feed(self, query_batch, qsizes, reply_batch, rsizes,
             neg_batch=None, neg_sizes=None, training=True):
         if neg_batch:
-	    print("neg batch exists!")
 	    reply_batch += neg_batch
             rsizes += neg_sizes
             query_batch += query_batch
             qsizes += qsizes
-        else:
-	    print("no neg batch")
         return {self.query_sizes: qsizes,
             self.query_inputs: query_batch,
             self.reply_sizes: rsizes,
@@ -258,7 +255,8 @@ class Unreferenced():
             batch_size=128, steps_per_checkpoint=100):
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
-
+	validation_queries = data_helpers.load_data("data/validation_ADEM","queries.txt", self.qmax_length)
+        validation_replies = data_helpers.load_data("data/validation_ADEM","hred_replies.txt", self.rmax_length)
         data_size = len(queries)
         print_score = tf.print(self.score)
         with self.session.as_default():
@@ -266,26 +264,45 @@ class Unreferenced():
 
             checkpoint_path = os.path.join(self.train_dir, "unref.model")
             loss = 0.0
-            prev_losses = [1.0] 
+	    validation_loss = 0.0
+	    best_validation_loss = 1000.0
+            prev_losses = [1.0]
+	    impatience = 0.0
             while True: 
                 step, l = self.train_step(queries, replies, data_size, batch_size)
                 _, validation_l = self.get_validation_loss(validation_queries, validation_replies, len(validation_queries), batch_size)
 
-                loss += l  
+                loss += l
+		validation_loss += validation_l
                 # save checkpoint
                 if step % steps_per_checkpoint == 0:
                     loss /= steps_per_checkpoint 
+		    validation_loss /= steps_per_checkpoint
                     print ("global_step %d, loss %f, learning rate %f"  \
                             %(step, loss, self.learning_rate.eval()))
-
+		    if validation_loss < best_validation_loss:
+			best_validation_loss = validation_loss
+			impatience = 0.0
+			print("Saving checkpoint")
+                        with open("best_checkpoint.txt","w+") as best_file, \
+			     open("validation_loss.txt", "w+") as validation_file, \
+				open("training_loss.txt", "w+") as training_file:
+			     best_file.write(str(step) + "\n")
+			     best_file.write(str(best_validation_loss))
+			     training_file.write(str(step) + ":" + str(loss))
+			     validation_file.write(str(step) +  ": " + str(validation_loss))
+			self.saver.save(self.session, checkpoint_path,
+                            global_step=self.global_step)
+		    else:
+			impatience += 1
+		    print("validation loss %f, best loss %f, impatience %f" %(validation_loss, best_validation_loss, impatience)) 
+		    
                     if loss > max(prev_losses):
                         self.session.run(self.learning_rate_decay_op)
                     prev_losses = (prev_losses+[loss])[-5:]
                     loss = 0.0
-
+		    validation_loss = 0.0
                     self.log_writer.add_summary(self.summary, step)
-                    self.saver.save(self.session, checkpoint_path,
-                            global_step=self.global_step)
 
 #                    """ Debug
                     query_batch, query_sizes, idx = self.get_batch(queries, data_size, 10)
