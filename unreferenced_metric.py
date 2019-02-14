@@ -205,33 +205,37 @@ class Unreferenced():
             self.reply_inputs: reply_batch,
             self.training : training}
 
-    def train_step(self, queries, replies, data_size, batch_size):
+
+    def get_validation_loss(self, queries, replies, data_size, batch_size):
         # data_size = # of queries
-
-
-        
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
-       
-
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
-
-                # idx uniquely identifies --> #TODO: figure out persona chat dataset
-
         negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size)
-        # compute sample loss and do optimize
-        
-       
-      
 
+        # compute sample loss and do optimize
         feed_dict = self.make_input_feed(query_batch, query_sizes,
                 reply_batch, reply_sizes, negative_reply_batch, neg_reply_sizes)
 
-        # 
+        output_feed = [self.global_step, self.loss]
+        step, loss = self.session.run(output_feed, feed_dict)
+
+        return step, loss
+
+    def train_step(self, queries, replies, data_size, batch_size):
+        # data_size = # of queries
+        query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
+        reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
+                batch_size, idx)
+        negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                data_size, batch_size)
+        # compute sample loss and do optimize
+        feed_dict = self.make_input_feed(query_batch, query_sizes,
+                reply_batch, reply_sizes, negative_reply_batch, neg_reply_sizes)
+
         output_feed = [self.global_step, self.train_op, self.loss]
         step, _, loss = self.session.run(output_feed, feed_dict)
-
 
         return step, loss
 
@@ -272,7 +276,7 @@ class Unreferenced():
             while True: 
                 step, l = self.train_step(queries, replies, data_size, batch_size)
                 # KEVIN DOES THIS TRAIN THE MODEL ON THE VALIDATION SET :(
-                _, validation_l = self.train_step(validation_queries, validation_replies, len(validation_queries), batch_size)
+                _, validation_l = self.get_validation_loss(validation_queries, validation_replies, len(validation_queries), batch_size)
 
                 loss += l  
                 validation_loss += validation_l
