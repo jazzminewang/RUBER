@@ -21,7 +21,7 @@ class Unreferenced():
             frembed,
             gru_num_units,
             mlp_units,
-            init_learning_rate=0.001,
+            init_learning_rate=0.01,
             l2_regular=0.1,
             margin=0.5,
             train_dir='train_data/',
@@ -288,16 +288,16 @@ class Unreferenced():
 		    if validation_loss < best_validation_loss:
 			best_validation_loss = validation_loss
 			impatience = 0.0
-			print("Saving checkpoint to " + data_dir)
-                        with open(data_dir + "best_checkpoint.txt","w+") as best_file:
+			print("Saving checkpoint to " + self.train_dir)
+                        with open(self.train_dir + "/best_checkpoint.txt","w+") as best_file:
 			     best_file.write(str(step) + "\n")
 			     best_file.write(str(validation_loss) + "\n")
                         self.saver.save(self.session, checkpoint_path, global_step=self.global_step)
 		    else:
 			impatience += 1
 		    print("validation loss %f, best loss %f, impatience %f" %(validation_loss, best_validation_loss, impatience)) 
-		    with open(data_dir + "validation_loss.txt", "a") as validation_file, \
-                                open(data_dir + "training_loss.txt", "a") as training_file:
+		    with open(self.train_dir + "/validation_loss.txt", "a") as validation_file, \
+                                open(self.train_dir + "/training_loss.txt", "a") as training_file:
 			 training_file.write(str(step) + ":" + str(loss) + "\n")
                          validation_file.write(str(step) +  ": " + str(validation_loss) + ", impatience: " + str(impatience) + "\n")
 		    

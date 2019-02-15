@@ -168,12 +168,19 @@ def parse_twitter_dataset(raw_data_dir, processed_data_dir):
                     lines = datafile.readlines()
 
                     for line in lines:
+			filter_set = ("/s>", "/d>", "", "/d> <")
                         dialogue = filter(None, line.split("</s>"))
-                        for i in range(0, len(dialogue) - 2):
+			dialogue = filter(lambda x: (x not in filter_set), dialogue)
+                        for i in range(0, len(dialogue) - 1):
                             query = dialogue[i].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
                             reply = dialogue[i + 1].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
                             queries.write(query)
                             replies.write(reply)
+                datafile.close()
+		print(fquery_filename)
+                queries.close()
+		print(freply_filename)
+    		replies.close()
     return fquery_short, freply_short
       
 
@@ -183,6 +190,7 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
         file path to file with all queries
         file path to file with all replies
     """
+    
     fquery_filename = os.path.join(processed_data_dir, "queries.txt")
     freply_filename = os.path.join(processed_data_dir, "replies.txt")
     fquery_file = Path(fquery_filename)
@@ -239,6 +247,8 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
                     
                     replies.write(filtered_lines[len(filtered_lines) - 1])
                 datafile.close()
+		print(fquery_filename)
+		print(freply_filename)
                 queries.close()
                 replies.close()
     return fquery_short, freply_short

@@ -34,16 +34,12 @@ def create_validation_set():
                     
                     if new_conversation:
                         # add first part only as query
-                        print("new conversation")
                         queries.write(split[0] + "\n")
-                        print("wrote " + split[0] + " to queries")
                         if len(split) > 1:
                             replies.write(split[1])
                             queries.write(split[1])
-                            print("wrote " + split[1] + " to queries and replies")
                         new_conversation = False
                     elif next_number < number:
-                        print("ending conversation")
                         # next line is new conversation, so add last part as only a reply
                         new_conversation = True
                         if len(split) > 1:
@@ -53,7 +49,6 @@ def create_validation_set():
                         else:
                             replies.write(split[0])
                     else:
-                        print("continuing conversation")
                         #write both parts as queries and replies
                         if len(split) > 1:
                             replies.write(split[0])
