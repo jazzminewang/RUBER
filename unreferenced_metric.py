@@ -21,7 +21,7 @@ class Unreferenced():
             frembed,
             gru_num_units,
             mlp_units,
-            init_learning_rate=1e-4,
+            init_learning_rate=0.001,
             l2_regular=0.1,
             margin=0.5,
             train_dir='train_data/',
@@ -151,20 +151,20 @@ class Unreferenced():
             		# optimizer
             		self.learning_rate = tf.Variable(init_learning_rate, trainable=False, name="learning_rate")
             		self.learning_rate_decay_op = \
-                	self.learning_rate.assign(self.learning_rate*0.99)
+                	self.learning_rate.assign(self.learning_rate*0.999)
             
             		# adam backprop as mentioned in paper
             		optimizer = tf.train.AdamOptimizer(self.learning_rate)
             		self.global_step = tf.Variable(0, trainable=False,name="global_step")
             		# training op
-            	with tf.device('/gpu:1'):
-                	self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
+                        with tf.device('/gpu:1'):
+                	    self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
                 	# global step is just a count of how many times the variables have been updated
-
-            		# checkpoint saver
-                	self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
-                	# write summary
-                	self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),self.session.graph)
+  
+                    	# checkpoint saver
+                        self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
+                        # write summary
+                        self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),self.session.graph)
         	        self.summary = tf.Summary()
 
 
@@ -265,7 +265,11 @@ class Unreferenced():
             checkpoint_path = os.path.join(self.train_dir, "unref.model")
             loss = 0.0
 	    validation_loss = 0.0
-	    best_validation_loss = 1000.0
+	    if os.path.isfile(data_dir + "best_checkpoint.txt"):
+       	        with open(data_dir + "best_checkpoint.txt", "r") as best_file:
+		    best_validation_loss = float(best_file.readlines()[1])
+	    else:
+		best_validation_loss = 1000.0
             prev_losses = [1.0]
 	    impatience = 0.0
             while True: 
@@ -280,22 +284,22 @@ class Unreferenced():
 		    validation_loss /= steps_per_checkpoint
                     print ("global_step %d, loss %f, learning rate %f"  \
                             %(step, loss, self.learning_rate.eval()))
+		    print("Best validation loss " + str(best_validation_loss))
 		    if validation_loss < best_validation_loss:
 			best_validation_loss = validation_loss
 			impatience = 0.0
-			print("Saving checkpoint")
-                        with open("best_checkpoint.txt","w+") as best_file, \
-			     open("validation_loss.txt", "w+") as validation_file, \
-				open("training_loss.txt", "w+") as training_file:
+			print("Saving checkpoint to " + data_dir)
+                        with open(data_dir + "best_checkpoint.txt","w+") as best_file:
 			     best_file.write(str(step) + "\n")
-			     best_file.write(str(best_validation_loss))
-			     training_file.write(str(step) + ":" + str(loss))
-			     validation_file.write(str(step) +  ": " + str(validation_loss))
-			self.saver.save(self.session, checkpoint_path,
-                            global_step=self.global_step)
+			     best_file.write(str(validation_loss) + "\n")
+                        self.saver.save(self.session, checkpoint_path, global_step=self.global_step)
 		    else:
 			impatience += 1
 		    print("validation loss %f, best loss %f, impatience %f" %(validation_loss, best_validation_loss, impatience)) 
+		    with open(data_dir + "validation_loss.txt", "a") as validation_file, \
+                                open(data_dir + "training_loss.txt", "a") as training_file:
+			 training_file.write(str(step) + ":" + str(loss) + "\n")
+                         validation_file.write(str(step) +  ": " + str(validation_loss) + ", impatience: " + str(impatience) + "\n")
 		    
                     if loss > max(prev_losses):
                         self.session.run(self.learning_rate_decay_op)
