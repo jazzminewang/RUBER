@@ -35,8 +35,3 @@ open('replies_scrambled.txt', 'w').writelines(lines)
 
 5. 
 
-#TODO:
-1. Test results against ADEM dataset.
-2. Process data better (instead of alternating lines query and reply, split by large spaces / regex (?)
-3. Create validation chart / implement early stopping (Graph validation MSE against checkpoint file name).
-4. Add argparse to hybrid_evaluation for train/eval. 

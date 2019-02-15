@@ -21,7 +21,7 @@ class Unreferenced():
             frembed,
             gru_num_units,
             mlp_units,
-            init_learning_rate=1e-4,
+            init_learning_rate=0.01,
             l2_regular=0.1,
             margin=0.5,
             train_dir='train_data/',
@@ -85,7 +85,7 @@ class Unreferenced():
                         # [batch_size, sequence_length]
                         shape=[None, self.qmax_length],
                         name="query_inputs")
-                with tf.device('/gpu:0'):
+                with tf.device('/gpu:1'):
                     query_embedding = get_birnn_embedding(
                             self.query_sizes, self.query_inputs,
                             qembed, 'query_rgu_birnn')
@@ -97,7 +97,7 @@ class Unreferenced():
                 self.reply_inputs = tf.placeholder(tf.int32,
                         shape=[None, self.rmax_length],
                         name="reply_inputs")
-                with tf.device('/gpu:0'):
+                with tf.device('/gpu:1'):
                     reply_embedding = get_birnn_embedding(
                         self.reply_sizes, self.reply_inputs,
                         rembed, 'reply_gru_birnn')
@@ -151,20 +151,20 @@ class Unreferenced():
             		# optimizer
             		self.learning_rate = tf.Variable(init_learning_rate, trainable=False, name="learning_rate")
             		self.learning_rate_decay_op = \
-                	self.learning_rate.assign(self.learning_rate*0.99)
+                	self.learning_rate.assign(self.learning_rate*0.999)
             
             		# adam backprop as mentioned in paper
             		optimizer = tf.train.AdamOptimizer(self.learning_rate)
             		self.global_step = tf.Variable(0, trainable=False,name="global_step")
             		# training op
-            	with tf.device('/gpu:0'):
-                	self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
+                        with tf.device('/gpu:1'):
+                	    self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
                 	# global step is just a count of how many times the variables have been updated
-
-            		# checkpoint saver
-                	self.saver = tf.train.Saver(tf.global_variables())
-                	# write summary
-                	self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),self.session.graph)
+  
+                    	# checkpoint saver
+                        self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
+                        # write summary
+                        self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),self.session.graph)
         	        self.summary = tf.Summary()
 
 
@@ -192,45 +192,48 @@ class Unreferenced():
     def make_input_feed(self, query_batch, qsizes, reply_batch, rsizes,
             neg_batch=None, neg_sizes=None, training=True):
         if neg_batch:
-	    print("neg batch exists!")
 	    reply_batch += neg_batch
             rsizes += neg_sizes
             query_batch += query_batch
             qsizes += qsizes
-        else:
-	    print("no neg batch")
         return {self.query_sizes: qsizes,
             self.query_inputs: query_batch,
             self.reply_sizes: rsizes,
             self.reply_inputs: reply_batch,
             self.training : training}
 
-    def train_step(self, queries, replies, data_size, batch_size):
+
+    def get_validation_loss(self, queries, replies, data_size, batch_size):
         # data_size = # of queries
-
-
-        
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
-       
-
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
-
-                # idx uniquely identifies --> #TODO: figure out persona chat dataset
-
         negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size)
-        # compute sample loss and do optimize
-        
-       
-      
 
+        # compute sample loss and do optimize
         feed_dict = self.make_input_feed(query_batch, query_sizes,
                 reply_batch, reply_sizes, negative_reply_batch, neg_reply_sizes)
 
+        output_feed = [self.global_step, self.loss]
+        step, loss = self.session.run(output_feed, feed_dict)
+
+        return step, loss
+
+    def train_step(self, queries, replies, data_size, batch_size):
+        # data_size = # of queries
+        query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
+        reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
+                batch_size, idx)
+        negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                data_size, batch_size)
+        # compute sample loss and do optimize
+        feed_dict = self.make_input_feed(query_batch, query_sizes,
+                reply_batch, reply_sizes, negative_reply_batch, neg_reply_sizes)
+
+        output_feed = [self.global_step, self.train_op, self.loss]
+        step, _, loss = self.session.run(output_feed, feed_dict)
         # 
-        output_feed = [self.global_step, self.train_op, self.loss, self.summary_op]
-        step, _, loss, self.summary = self.session.run(output_feed, feed_dict)
 
 
         return step, loss
@@ -240,6 +243,7 @@ class Unreferenced():
         Initialize all variables or load model from checkpoint
         """
         ckpt = tf.train.get_checkpoint_state(self.train_dir)
+	print("training dir is " + self.train_dir)
         if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
             print ('Restoring model from %s'%ckpt.model_checkpoint_path)
             self.saver.restore(self.session, ckpt.model_checkpoint_path)
@@ -251,7 +255,8 @@ class Unreferenced():
             batch_size=128, steps_per_checkpoint=100):
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
-
+	validation_queries = data_helpers.load_data("data/validation_ADEM","queries.txt", self.qmax_length)
+        validation_replies = data_helpers.load_data("data/validation_ADEM","hred_replies.txt", self.rmax_length)
         data_size = len(queries)
         print_score = tf.print(self.score)
         with self.session.as_default():
@@ -259,21 +264,48 @@ class Unreferenced():
 
             checkpoint_path = os.path.join(self.train_dir, "unref.model")
             loss = 0.0
-            prev_losses = [1.0] 
+	    validation_loss = 0.0
+	    if os.path.isfile(data_dir + "best_checkpoint.txt"):
+       	        with open(data_dir + "best_checkpoint.txt", "r") as best_file:
+		    best_validation_loss = float(best_file.readlines()[1])
+	    else:
+		best_validation_loss = 1000.0
+            prev_losses = [1.0]
+	    impatience = 0.0
             while True: 
                 step, l = self.train_step(queries, replies, data_size, batch_size)
-                loss += l  
+                _, validation_l = self.get_validation_loss(validation_queries, validation_replies, len(validation_queries), batch_size)
+
+                loss += l
+		validation_loss += validation_l
                 # save checkpoint
                 if step % steps_per_checkpoint == 0:
                     loss /= steps_per_checkpoint 
+		    validation_loss /= steps_per_checkpoint
                     print ("global_step %d, loss %f, learning rate %f"  \
                             %(step, loss, self.learning_rate.eval()))
-
+		    print("Best validation loss " + str(best_validation_loss))
+		    if validation_loss < best_validation_loss:
+			best_validation_loss = validation_loss
+			impatience = 0.0
+			print("Saving checkpoint to " + self.train_dir)
+                        with open(self.train_dir + "/best_checkpoint.txt","w+") as best_file:
+			     best_file.write(str(step) + "\n")
+			     best_file.write(str(validation_loss) + "\n")
+                        self.saver.save(self.session, checkpoint_path, global_step=self.global_step)
+		    else:
+			impatience += 1
+		    print("validation loss %f, best loss %f, impatience %f" %(validation_loss, best_validation_loss, impatience)) 
+		    with open(self.train_dir + "/validation_loss.txt", "a") as validation_file, \
+                                open(self.train_dir + "/training_loss.txt", "a") as training_file:
+			 training_file.write(str(step) + ":" + str(loss) + "\n")
+                         validation_file.write(str(step) +  ": " + str(validation_loss) + ", impatience: " + str(impatience) + "\n")
+		    
                     if loss > max(prev_losses):
                         self.session.run(self.learning_rate_decay_op)
                     prev_losses = (prev_losses+[loss])[-5:]
                     loss = 0.0
-
+		    validation_loss = 0.0
                     self.log_writer.add_summary(self.summary, step)
                     self.saver.save(self.session, checkpoint_path,
                             global_step=self.global_step)
@@ -294,7 +326,7 @@ class Unreferenced():
 	    print("not inited, initing now")
             self.init_model()
 
-	train_dir = "ADEM_data/data"	
+	#train_dir = "ADEM_data/data"	
 	if train_dir is None: 
             queries = data_helpers.load_file(data_dir, fquery)
             replies = data_helpers.load_file(data_dir, freply)
