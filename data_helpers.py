@@ -184,7 +184,7 @@ def parse_twitter_dataset(raw_data_dir, processed_data_dir):
     return fquery_short, freply_short
       
 
-def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
+def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="train"):
     """
     Return:
         file path to file with all queries
@@ -201,7 +201,7 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
         print("Creating queries and replies dataset from personachat")
         
 	for data_filename in os.listdir(raw_data_dir):
-            if "train" in data_filename and "no_cand" in data_filename and "revised" in data_filename:
+            if file_type in data_filename and "no_cand" in data_filename and "revised" in data_filename:
                 data_filename = os.path.join(raw_data_dir, data_filename)
                 with open(data_filename, "r") as datafile, \
                     open(fquery_filename, "w+") as queries, \
@@ -271,8 +271,6 @@ if __name__ == '__main__':
     modes: create training dataset
     create embedding files for validation dataset
     """
-    
-
     if args.twitter:
 	print("Parsing twitter dataset")
 	raw_data_dir = "./data/twitter_data"
