@@ -21,7 +21,7 @@ class Unreferenced():
             frembed,
             gru_num_units,
             mlp_units,
-            init_learning_rate=0.01,
+            init_learning_rate=1e-4,
             l2_regular=0.1,
             margin=0.5,
             train_dir='train_data/',
@@ -151,7 +151,7 @@ class Unreferenced():
             		# optimizer
             		self.learning_rate = tf.Variable(init_learning_rate, trainable=False, name="learning_rate")
             		self.learning_rate_decay_op = \
-                	self.learning_rate.assign(self.learning_rate*0.999)
+                	self.learning_rate.assign(self.learning_rate*0.99)
             
             		# adam backprop as mentioned in paper
             		optimizer = tf.train.AdamOptimizer(self.learning_rate)
@@ -255,9 +255,12 @@ class Unreferenced():
             batch_size=128, steps_per_checkpoint=100):
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
-	validation_queries = data_helpers.load_data("data/validation_ADEM","queries.txt", self.qmax_length)
-        validation_replies = data_helpers.load_data("data/validation_ADEM","hred_replies.txt", self.rmax_length)
-        data_size = len(queries)
+	#TODO: add in arg for validation dataset path
+       	#validation_queries = data_helpers.load_data("data/validation_ADEM","queries.txt", self.qmax_length)
+        #validation_replies = data_helpers.load_data("data/validation_ADEM","hred_replies.txt", self.rmax_length)
+        validation_queries = data_helpers.load_data("data/personachat/validation","queries.txt", self.qmax_length)
+        validation_replies = data_helpers.load_data("data/personachat/validation","replies.txt", self.rmax_length)
+	data_size = len(queries)
         print_score = tf.print(self.score)
         with self.session.as_default():
             self.init_model()

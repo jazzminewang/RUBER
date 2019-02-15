@@ -16,6 +16,8 @@ def load_file(data_dir, fname):
     fname = os.path.join(data_dir, fname)
     print 'Loading file %s'%(fname)
     lines = open(fname).readlines()
+    print("Num lines in file: ")
+    print(len(lines))
     return [line.rstrip() for line in lines]
 
 def process_train_file(data_dir, fname, max_length, min_frequency=10):
@@ -168,19 +170,16 @@ def parse_twitter_dataset(raw_data_dir, processed_data_dir):
                     lines = datafile.readlines()
 
                     for line in lines:
-			filter_set = ("/s>", "/d>", "", "/d> <")
+			filter_set = ("/s>", " /d>", "", "/d>", "/d> <")
                         dialogue = filter(None, line.split("</s>"))
 			dialogue = filter(lambda x: (x not in filter_set), dialogue)
                         for i in range(0, len(dialogue) - 1):
                             query = dialogue[i].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
                             reply = dialogue[i + 1].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
-                            queries.write(query)
-                            replies.write(reply)
-                datafile.close()
-		print(fquery_filename)
-                queries.close()
-		print(freply_filename)
-    		replies.close()
+                            queries.write(query + "\n")
+                            replies.write(reply + "\n")
+    print("Wrote queries to " + fquery_filename)
+    print("Wrote replies to " + freply_filename)
     return fquery_short, freply_short
       
 
@@ -281,8 +280,13 @@ if __name__ == '__main__':
         fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
 
     if args.validate:
-        print("Also parsing validation dataset")
-        fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
+	if args.twitter:
+	    print("Parsing twitter validation set")
+	    processed_validation_dir = "./data/twitter_data/validate"
+ 	    fquery_validate, freply_validate = parse_twitter_dataset(raw_data_dir, processed_validation_dir)
+        else:
+	    print("Parsing personachat validation set")
+	    fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
 
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
@@ -295,12 +299,12 @@ if __name__ == '__main__':
     process_train_file(processed_train_dir, fquery_train, query_max_length)
     process_train_file(processed_train_dir, freply_train, reply_max_length)
 
-    # fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
-    # frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
+    fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
+    frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
 
-    # word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
-    # make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
+    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
+    make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
 
-    # word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
-    # make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
+    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
+    make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
     pass
