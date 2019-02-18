@@ -161,11 +161,11 @@ class Unreferenced():
                 	    self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
                 	# global step is just a count of how many times the variables have been updated
   
-                    	# checkpoint saver
-                        self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
-                        # write summary
-                        self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),self.session.graph)
-        	        self.summary = tf.Summary()
+                # checkpoint saver
+                self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
+                # write summary
+                self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),self.session.graph)
+                self.summary = tf.Summary()
 
 
     def get_batch(self, data, data_size, batch_size, idx=None):
@@ -244,6 +244,11 @@ class Unreferenced():
         """
         ckpt = tf.train.get_checkpoint_state(self.train_dir)
 	print("training dir is " + self.train_dir)
+	print("overwriting to twitter_data/train")
+	ckpt = tf.train.get_checkpoint_state("twitter_data/train")
+	if not ckpt:
+	   print("failed to retrieve checkpoint, trying ADEM_data/data")
+	   ckpt = tf.train.get_checkpoint_state("ADEM_data/data")
         if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
             print ('Restoring model from %s'%ckpt.model_checkpoint_path)
             self.saver.restore(self.session, ckpt.model_checkpoint_path)
@@ -255,13 +260,16 @@ class Unreferenced():
             batch_size=128, steps_per_checkpoint=100):
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
+	data_size = len(queries)
+
 	#TODO: add in arg for validation dataset path
        	#validation_queries = data_helpers.load_data("data/validation_ADEM","queries.txt", self.qmax_length)
         #validation_replies = data_helpers.load_data("data/validation_ADEM","hred_replies.txt", self.rmax_length)
-        validation_queries = data_helpers.load_data("data/personachat/validation","queries.txt", self.qmax_length)
-        validation_replies = data_helpers.load_data("data/personachat/validation","replies.txt", self.rmax_length)
-	data_size = len(queries)
-        print_score = tf.print(self.score)
+        #validation_queries = data_helpers.load_data("data/personachat/validation","queries.txt", self.qmax_length)
+        #validation_replies = data_helpers.load_data("data/personachat/validation","replies.txt", self.rmax_length)
+	validation_queries = data_helpers.load_data("data/twitter_data/validate","queries.txt", self.qmax_length)
+        validation_replies = data_helpers.load_data("data/twitter_data/validate","replies.txt", self.rmax_length)
+	print("Writing validation + loss to " + data_dir)
         with self.session.as_default():
             self.init_model()
 
@@ -271,6 +279,7 @@ class Unreferenced():
 	    if os.path.isfile(data_dir + "best_checkpoint.txt"):
        	        with open(data_dir + "best_checkpoint.txt", "r") as best_file:
 		    best_validation_loss = float(best_file.readlines()[1])
+		    
 	    else:
 		best_validation_loss = 1000.0
             prev_losses = [1.0]

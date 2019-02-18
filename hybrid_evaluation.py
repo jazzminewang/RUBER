@@ -79,9 +79,12 @@ if __name__ == '__main__':
 
     if args.mode == "eval_ADEM":
         data_dir = 'ADEM_data/data'
-        hybrid_dir = 'data'
-        hybrid_fquery = 'personachat/better_turns/queries.txt'
-        hybrid_freply = 'personachat/better_turns/replies.txt'
+	if args.dataset == "twitter":
+             hybrid_fquery = "twitter_data/train/queries.txt"
+             hybrid_freply = "twitter_data/train/replies.txt"
+	else:
+        	hybrid_fquery = 'personachat/better_turns/queries.txt'
+        	hybrid_freply = 'personachat/better_turns/replies.txt'
         fquery = "queries.txt"
         freply = args.reply_file
         is_training=False
@@ -89,6 +92,7 @@ if __name__ == '__main__':
         if args.mode == "eval_personachat":
             is_training=False
 	    hybrid_dir = 'data'
+            train_dir = 'data'
 	if args.dataset == "twitter":
              fquery =  hybrid_fquery = "twitter_data/train/queries.txt"
              freply =  hybrid_freply = "twitter_data/train/replies.txt"
@@ -100,8 +104,8 @@ if __name__ == '__main__':
     """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
-    print("Initializing Hybrid object")
-    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply, is_training=is_training)
+    print("Initializing Hybrid object with " + hybrid_fquery + " as training query file")
+    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%hybrid_fquery, '%s.embed'%hybrid_freply, is_training=is_training)
 
     if args.mode == "eval_personachat":
         # use validation queries and replies
@@ -119,7 +123,7 @@ if __name__ == '__main__':
             scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(hybrid_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(hybrid_fquery, qmax_length),'%s.vocab%d'%(hybrid_freply, rmax_length))
 	    csv_title = './results/' + freply + str(int(time.time())) + '.csv'
         elif args.mode == "eval_personachat":
-            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
+            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(hybrid_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
             csv_title = './results/personachat/' +  str(int(time.time())) + '.csv'
 
         """write results to CSV"""

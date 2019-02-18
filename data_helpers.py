@@ -136,7 +136,7 @@ def load_word2vec(data_dir, fword2vec):
             vecs[ps[0]] = map(float, ps[1:])
     return vecs, vec_dim, size
 
-def parse_twitter_dataset(raw_data_dir, processed_data_dir):
+def parse_twitter_dataset(raw_data_dir, processed_data_dir, filename="train.txt"):
     # end-of-utterance: </s>
     # end-of-dialogue: </d>
     # first speaker: <first_speaker>
@@ -159,7 +159,7 @@ def parse_twitter_dataset(raw_data_dir, processed_data_dir):
         print("Creating queries and replies dataset from twitter dataset")
         
 	for data_filename in os.listdir(raw_data_dir):
-		if data_filename == "train.txt":
+		if data_filename == filename:
                     data_filename = os.path.join(raw_data_dir, data_filename)
 		else:
 		    continue
@@ -283,7 +283,7 @@ if __name__ == '__main__':
 	if args.twitter:
 	    print("Parsing twitter validation set")
 	    processed_validation_dir = "./data/twitter_data/validate"
- 	    fquery_validate, freply_validate = parse_twitter_dataset(raw_data_dir, processed_validation_dir)
+ 	    fquery_validate, freply_validate = parse_twitter_dataset(raw_data_dir, processed_validation_dir, filename="valid.txt")
         else:
 	    print("Parsing personachat validation set")
 	    fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
@@ -307,4 +307,14 @@ if __name__ == '__main__':
 
     word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
     make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
+
+    process_train_file(processed_validation_dir, fquery_validate, query_max_length)
+    process_train_file(processed_validation_dir, freply_validate, reply_max_length)
+
+    fqvocab = '%s.vocab%d'%(fquery_validate, query_max_length)
+    frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
+
+    make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
+
+    make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
     pass
