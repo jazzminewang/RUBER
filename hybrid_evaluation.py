@@ -65,6 +65,32 @@ class Hybrid():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+
+    # best logic:
+    # - data_dir (path for word2vec)
+    # - dataset (ADEM, personachat, or twitter)
+    # - mode (training or validation)
+
+    # File structure
+
+    # data
+    # -- word2vec embeddings
+    # - ADEM
+    #   - validation
+        #   - [ assorted files for validation ]
+    #   - train
+        #   - [ assorted files for training ]
+    # - personachat
+    #   - validation
+            #   - [ assorted files for validation ]
+    #   - train [RENAME]
+            #   - [ assorted files for training ]
+    # - twitter
+    #   - validation
+            #   - [ assorted files for validation ]
+    #   - train
+            #   - [ assorted files for training ]
+    
     parser.add_argument('mode') 
     parser.add_argument('-reply_file')
     parser.add_argument('-dataset')

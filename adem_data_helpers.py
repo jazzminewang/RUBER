@@ -190,8 +190,8 @@ def write_adem_to_csv(data_dir):
 
             
 if __name__ == '__main__':
-    raw_data_dir = './data/ADEM_data/raw_data'
-    processed_data_dir = './data/ADEM_data/processed_data'
+    raw_data_dir = './data/ADEM/train'
+    processed_data_dir = './data/ADEM/validation'
     word2vec_dir = './data'
 
     query_max_length, reply_max_length = [20, 30]

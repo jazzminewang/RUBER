@@ -254,39 +254,33 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
 
 # Run this first to create the embedding matrix ? 
 if __name__ == '__main__':
-    raw_data_dir = './data'
-    processed_train_dir = './data/personachat/better_turns/'
-    processed_validation_dir = './data/personachat/validation/'
+    # Argument is dataset. Twitter or Personachat 
+    # processed_train_dir = './data/personachat/better_turns/'
+    # processed_validation_dir = './data/personachat/validation/'
     query_max_length, reply_max_length = [20, 30]
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-twitter', help="pass in twitter only if you want to create training dataset from twitter")
-    parser.add_argument('-validate', help="pass in validate only if you want to create validation data") 
+    parser.add_argument('-dataset', help="Either Personachat or Twitter")
 
     args = parser.parse_args()
-
-    """
-    PERSONA CHAT
-    modes: create training dataset
-    create embedding files for validation dataset
-    """
     if args.twitter:
-	print("Parsing twitter dataset")
-	raw_data_dir = "./data/twitter_data"
+	    raw_data_dir = "./data/twitter_data"
         processed_train_dir = "./data/twitter_data/train/"
+        processed_validation_dir = "./data/twitter_data/validate"
+        print("Parsing twitter training data")
         fquery_train, freply_train = parse_twitter_dataset(raw_data_dir, processed_train_dir)
+        print("Parsing twitter validation data")
+        fquery_validate, freply_validate = parse_twitter_dataset(raw_data_dir, processed_validation_dir, filename="valid.txt")
     else:
-	print("Parsing persona chat dataset")
+	    print("Parsing twitter dataset")
+        raw_data_dir = './data'
+        processed_train_dir = "./data/personachat/train/"
+        processed_validation_dir = "./data/personachat/validate"
+        print("Parsing personachat training data")
         fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
+        print("Parsing personachat validation data")
+        fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
 
-    if args.validate:
-	if args.twitter:
-	    print("Parsing twitter validation set")
-	    processed_validation_dir = "./data/twitter_data/validate"
- 	    fquery_validate, freply_validate = parse_twitter_dataset(raw_data_dir, processed_validation_dir, filename="valid.txt")
-        else:
-	    print("Parsing personachat validation set")
-	    fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
 
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
@@ -308,13 +302,13 @@ if __name__ == '__main__':
     word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
     make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
 
+    print("Validation")
     process_train_file(processed_validation_dir, fquery_validate, query_max_length)
     process_train_file(processed_validation_dir, freply_validate, reply_max_length)
 
-    fqvocab = '%s.vocab%d'%(fquery_validate, query_max_length)
-    frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
+    # fqvocab = '%s.vocab%d'%(fquery_validate, query_max_length)
+    # frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
 
-    make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
-
-    make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
+    # make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
+    # make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
     pass
