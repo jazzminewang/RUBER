@@ -155,4 +155,4 @@ if __name__ == '__main__':
         """train"""
         print("Training")
 	print("Data dir is " + data_dir)
-        hybrid.train_unref(data_dir, training_fquery, training_freply)
+        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)

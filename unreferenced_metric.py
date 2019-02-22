@@ -256,19 +256,13 @@ class Unreferenced():
             print ('Initializing model variables')
             self.session.run(tf.global_variables_initializer())
 
-    def train(self, data_dir, fquery, freply,
+    def train(self, data_dir, fquery, freply, validation_fquery, validation_freply_true,
             batch_size=128, steps_per_checkpoint=100):
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
 	data_size = len(queries)
-
-	#TODO: add in arg for validation dataset path
-       	#validation_queries = data_helpers.load_data("data/validation_ADEM","queries.txt", self.qmax_length)
-        #validation_replies = data_helpers.load_data("data/validation_ADEM","hred_replies.txt", self.rmax_length)
-        #validation_queries = data_helpers.load_data("data/personachat/validation","queries.txt", self.qmax_length)
-        #validation_replies = data_helpers.load_data("data/personachat/validation","replies.txt", self.rmax_length)
-	validation_queries = data_helpers.load_data("data/twitter_data/validate","queries.txt", self.qmax_length)
-        validation_replies = data_helpers.load_data("data/twitter_data/validate","replies.txt", self.rmax_length)
+	validation_queries = data_helpers.load_data(validation_fquery, self.qmax_length)
+        validation_replies = data_helpers.load_data(validation_freply_true, self.rmax_length)
 	print("Writing validation + loss to " + data_dir)
         with self.session.as_default():
             self.init_model()
