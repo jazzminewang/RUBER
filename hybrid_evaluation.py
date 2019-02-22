@@ -93,26 +93,29 @@ if __name__ == '__main__':
 
     data_dir = "./data"
 
-    parser.add_argument('dataset')
+    parser.add_argument('train_dataset')
+    parser.add_argument('validation_dataset')
     parser.add_argument('mode')
     args = parser.parse_args()
 
-    dataset = args.dataset #ADEM, personachat, or twitter
+    train_dataset = args.train_dataset #personachat or twitter
+    validation_dataset = args.validation_dataset #ADEM, personachat
     mode = args.mode # train or validate
 
     qmax_length, rmax_length = [20, 30]
 
     print("Mode: " + args.mode)
 
-    training_fquery = dataset + "/train/queries.txt"
-    training_freply = dataset + "/train/replies.txt"
-    validation_fquery = dataset + "/validation/queries.txt"
-    if args.reply_file and args.dataset=="ADEM":
-        validation_freply_true = dataset + "validation/true.txt"
-        validation_freply_generated = dataset + args.reply_file
+    training_fquery = train_dataset + "/train/queries.txt"
+    training_freply = train_dataset + "/train/replies.txt"
+    validation_fquery = validation_dataset + "/validation/queries.txt"
+    if args.reply_file and args.validation_dataset =="ADEM":
+        validation_freply_true = validation_dataset + "validation/true.txt"
+        validation_freply_generated = validation_dataset + args.reply_file
     else:
-        validation_freply_true = dataset + "validation/replies.txt.true.sub"
-        validation_freply_generated = dataset + "/validation/replies.txt.sub"
+        #personachat
+        validation_freply_true = validation_dataset + "validation/replies.txt.true.sub"
+        validation_freply_generated = validation_dataset + "/validation/replies.txt.sub"
 
     if args.mode == "train":
         is_training=True
