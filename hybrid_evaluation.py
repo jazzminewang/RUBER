@@ -135,16 +135,9 @@ if __name__ == '__main__':
             column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
             writer.writerow([col for col in column_titles])
             
-            if args.mode != "eval_ADEM":
-                fquery = '%s.sub'%fquery
-		        true = '%s.true.sub'%freply
-                freply = '%s.sub'%freply
-            else:
-                true = "true.txt"
-
-            with open(data_dir + "/" + fquery, "r") as queries, \
-                    open(data_dir+ "/" + freply, "r") as scored_replies, \
-                        open(data_dir+ "/"  + true, "r") as true_replies:
+            with open(validation_fquery, "r") as queries, \
+                    open(validation_freply_generated, "r") as scored_replies, \
+                        open(validation_freply_true, "r") as true_replies:
                 for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
                     query = query.rstrip()
                     scored_reply = scored_reply.rstrip()
@@ -161,4 +154,4 @@ if __name__ == '__main__':
         """train"""
         print("Training")
 	print("Data dir is " + data_dir)
-        hybrid.train_unref(data_dir, fquery, freply)
+        hybrid.train_unref(data_dir, training_fquery, training_freply)
