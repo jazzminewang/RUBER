@@ -244,8 +244,8 @@ class Unreferenced():
         """
         ckpt = tf.train.get_checkpoint_state(self.train_dir)
 	print("training dir is " + self.train_dir)
-	print("overwriting to twitter_data/train")
-	ckpt = tf.train.get_checkpoint_state("twitter_data/train")
+	#print("overwriting to twitter_data/train")
+	#ckpt = tf.train.get_checkpoint_state("twitter_data/train")
 	if not ckpt:
 	   print("failed to retrieve checkpoint, trying ADEM_data/data")
 	   ckpt = tf.train.get_checkpoint_state("ADEM_data/data")

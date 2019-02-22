@@ -1,4 +1,4 @@
-#python create_persona_validation_set.py && \
-# python data_helpers.py && \
+python create_persona_validation_set.py && \
+python data_helpers.py -dataset="personachat" && \
 python hybrid_evaluation.py \
-    "train" 
+    "personachat" "ADEM" "train" 

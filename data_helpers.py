@@ -263,19 +263,18 @@ if __name__ == '__main__':
     parser.add_argument('-dataset', help="Either Personachat or Twitter")
 
     args = parser.parse_args()
-    if args.twitter:
-	    raw_data_dir = "./data/twitter_data"
-        processed_train_dir = "./data/twitter_data/train/"
-        processed_validation_dir = "./data/twitter_data/validate"
-        print("Parsing twitter training data")
-        fquery_train, freply_train = parse_twitter_dataset(raw_data_dir, processed_train_dir)
-        print("Parsing twitter validation data")
-        fquery_validate, freply_validate = parse_twitter_dataset(raw_data_dir, processed_validation_dir, filename="valid.txt")
+    if args.dataset=="twitter":
+	    raw_data_dir = "./data/twitter"
+            processed_train_dir = "./data/twitter/train/"
+            processed_validation_dir = "./data/twitter/validation"
+            print("Parsing twitter training data")
+            fquery_train, freply_train = parse_twitter_dataset(raw_data_dir, processed_train_dir)
+            print("Parsing twitter validation data")
+            fquery_validate, freply_validate = parse_twitter_dataset(raw_data_dir, processed_validation_dir, filename="valid.txt")
     else:
-	    print("Parsing twitter dataset")
         raw_data_dir = './data'
         processed_train_dir = "./data/personachat/train/"
-        processed_validation_dir = "./data/personachat/validate"
+        processed_validation_dir = "./data/personachat/validation"
         print("Parsing personachat training data")
         fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
         print("Parsing personachat validation data")

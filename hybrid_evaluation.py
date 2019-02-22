@@ -29,7 +29,6 @@ class Hybrid():
                 os.path.join(data_dir,fqembed),
                 os.path.join(data_dir,frembed),
                 gru_units, mlp_units,
-                train_dir=train_dir, 
                 is_training=is_training)
 
     def train_unref(self, data_dir, fquery, freply):
@@ -52,9 +51,7 @@ class Hybrid():
         return ret
 
     def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab):
-	print("training dir is ")
-	print(train_dir)
-        ref_scores = self.ref.scores(data_dir, freply, fgenerated, train_dir=train_dir)
+        ref_scores = self.ref.scores(data_dir, freply, fgenerated)
 	norm_ref_scores = self.normalize(ref_scores, coefficient=4, smallest_value=1)
         
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
@@ -96,6 +93,7 @@ if __name__ == '__main__':
     parser.add_argument('train_dataset')
     parser.add_argument('validation_dataset')
     parser.add_argument('mode')
+    parser.add_argument('-reply_file')
     args = parser.parse_args()
 
     train_dataset = args.train_dataset #personachat or twitter
