@@ -173,8 +173,12 @@ def parse_twitter_dataset(raw_data_dir, processed_data_dir, filename="train.txt"
 			filter_set = ("/s>", " /d>", "", "/d>", "/d> <")
                         dialogue = filter(None, line.split("</s>"))
 			dialogue = filter(lambda x: (x not in filter_set), dialogue)
+            context = []
                         for i in range(0, len(dialogue) - 1):
+                            more = get_most_recent_context(context)
                             query = dialogue[i].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
+                            context.append(query)
+                            query = query + more
                             reply = dialogue[i + 1].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
                             queries.write(query + "\n")
                             replies.write(reply + "\n")
@@ -182,6 +186,15 @@ def parse_twitter_dataset(raw_data_dir, processed_data_dir, filename="train.txt"
     print("Wrote replies to " + freply_filename)
     return fquery_short, freply_short
       
+def get_most_recent_context(context):
+    if len(context) >= 3:
+        return "{}{}{}".format(context[len(context) - 1], context[len(context) - 2], context[len(context) - 3])
+    elif len(context) == 2:
+        return "{}{}".format(context[len(context) - 1], context[len(context) - 2])
+    elif len(context) == 1:
+        return "{}".format(context[len(context) - 1]
+    else:
+        return ""
 
 def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="train"):
     """
@@ -197,7 +210,7 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
     fquery_short = "queries.txt" 
     freply_short = "replies.txt"
     if not fquery_file.exists() and not freply_file.exists():
-        print("Creating queries and replies dataset from personachat")
+        print("Creating queries and replies dataset from personachat with context added (past three queries)")
         
 	for data_filename in os.listdir(raw_data_dir):
             if file_type in data_filename and "no_cand" in data_filename and "revised" in data_filename:
@@ -209,6 +222,7 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
                     lines = datafile.readlines()
                     filtered_lines = [line for line in lines if 'persona:' not in line]
                     new_conversation = True
+                    context = list[]
 
                     # change to new conversation if next line is a smaller number --> omitting last line edge case
                     for x in range(0, len(filtered_lines) - 2):
@@ -219,30 +233,36 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
                         
                         if new_conversation:
                             # add first part only as query
-                            queries.write(split[0] + "\n")
+                            queries.write(split[0] + get_most_recent_context(context))
+                            context.append(split[0])
                             if len(split) > 1:
                                 replies.write(split[1])
-                                queries.write(split[1])
+                                queries.write(split[1] + get_most_recent_context(context))
+                                context.append(split[1])
                             new_conversation = False
                         elif next_number < number:
-                            # next line is new conversation, so add last part as only a reply
+                            # next line is new conversation, so add last part as only a reply. Also, clear context.
                             new_conversation = True
                             if len(split) > 1:
                                 replies.write(split[0])
-                                queries.write(split[0])
+                                queries.write(split[0] + get_most_recent_context(context))
                                 replies.write(split[1])
                             else:
                                 replies.write(split[0])
+                            context = []
                         else:
                             #write both parts as queries and replies
                             if len(split) > 1:
                                 replies.write(split[0])
-                                queries.write(split[0])
+                                queries.write(split[0]+ get_most_recent_context(context))
+                                context.append(split[0])
                                 replies.write(split[1])
-                                queries.write(split[1])
+                                queries.write(split[1] + get_most_recent_context(context))
+                                context.append(split[1])
                             else:
-                                queries.write(split[0])
+                                queries.write(split[0]+ get_most_recent_context(context))
                                 replies.write(split[0])
+                                context.append(split[1])
                     
                     replies.write(filtered_lines[len(filtered_lines) - 1])
                 datafile.close()
@@ -255,9 +275,7 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
 # Run this first to create the embedding matrix ? 
 if __name__ == '__main__':
     # Argument is dataset. Twitter or Personachat 
-    # processed_train_dir = './data/personachat/better_turns/'
-    # processed_validation_dir = './data/personachat/validation/'
-    query_max_length, reply_max_length = [20, 30]
+    query_max_length, reply_max_length = [40, 30]
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-dataset', help="Either Personachat or Twitter")

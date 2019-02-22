@@ -19,7 +19,7 @@ class Hybrid():
             qmax_length=20,
             rmax_length=30,
             ref_method='max_min',
-            gru_units=128, mlp_units=[256, 512, 128],
+            gru_units=500, mlp_units=[256, 512, 128],
             is_training=True
         ):
         print("Initializing referenced model")
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     validation_dataset = args.validation_dataset #ADEM, personachat
     mode = args.mode # train or validate
 
-    qmax_length, rmax_length = [20, 30]
+    qmax_length, rmax_length = [40, 30]
 
     print("Mode: " + args.mode)
 

@@ -23,7 +23,7 @@ class Unreferenced():
             mlp_units,
             init_learning_rate=1e-4,
             l2_regular=0.1,
-            margin=0.5,
+            margin=0.075, #from RUBER authors
             train_dir='train_data/',
             is_training=True
             ):
