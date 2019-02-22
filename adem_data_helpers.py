@@ -39,7 +39,6 @@ def load_adem_data(raw_data_dir, processed_data_dir):
                                                     open(processed_data_dir + '/tfidf_scores.txt', 'w+') as tfidf_scores:
                 def write_scores_to_file(context_id, model_type, index):
                     score_key = "overall" + str(index)
-                    print("Looking for context id " + str(context_id) + " for " + model_type)
                     avg_score = []
                     
                     for list_scores in scores_dict.values():
@@ -47,14 +46,11 @@ def load_adem_data(raw_data_dir, processed_data_dir):
                             if task["c_id"] == context_id:
                                 model_score = int(task[score_key])
                                 avg_score.append(model_score)
-                                print(model_score)
                     
                     if avg_score == []:
-                        print("score not present")
                         score = -1
                     else:
                         score = sum(avg_score) / float(len(avg_score))
-                        print("average score: " + str(score))
 
                     score = str(score) +"\n"
 
@@ -190,7 +186,7 @@ def write_adem_to_csv(data_dir):
 
             
 if __name__ == '__main__':
-    raw_data_dir = './data/ADEM/train'
+    raw_data_dir = './data/ADEM/raw'
     processed_data_dir = './data/ADEM/validation'
     word2vec_dir = './data'
 
@@ -206,30 +202,31 @@ if __name__ == '__main__':
     freply2 = "hred_replies.txt"
     freply3 = "de_replies.txt"
     freply4 = "tfidf_replies.txt"
-
+    freply5 = "true.txt"
     # # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
-    # print("Processing training files")
+    print("Processing training files")
     process_train_file(processed_data_dir, fquery, query_max_length)
     process_train_file(processed_data_dir, freply1, reply_max_length)
     process_train_file(processed_data_dir, freply2, reply_max_length)
     process_train_file(processed_data_dir, freply3, reply_max_length)
     process_train_file(processed_data_dir, freply4, reply_max_length)
+    process_train_file(processed_data_dir, freply5, reply_max_length)
 
     fqvocab = '%s.vocab%d'%(fquery, query_max_length)
     frvocab1 = '%s.vocab%d'%(freply1, reply_max_length)
     frvocab2 = '%s.vocab%d'%(freply2, reply_max_length)
     frvocab3 = '%s.vocab%d'%(freply3, reply_max_length)
     frvocab4 = '%s.vocab%d'%(freply4, reply_max_length)
-
+    frvocab5 = '%s.vocab%d'%(freply5, reply_max_length)
     word2vec, vec_dim, _ = load_word2vec(word2vec_dir, fqword2vec)
     make_embedding_matrix(processed_data_dir, fquery, word2vec, vec_dim, fqvocab)
 
-    word2vec, vec_dim, _ = load_word2vec(word2vec_dir, frword2vec)
     make_embedding_matrix(processed_data_dir, freply1, word2vec, vec_dim, frvocab1)
     make_embedding_matrix(processed_data_dir, freply2, word2vec, vec_dim, frvocab2)
     make_embedding_matrix(processed_data_dir, freply3, word2vec, vec_dim, frvocab3)
     make_embedding_matrix(processed_data_dir, freply4, word2vec, vec_dim, frvocab4)
+    make_embedding_matrix(processed_data_dir, freply5, word2vec, vec_dim, frvocab5)
     pass

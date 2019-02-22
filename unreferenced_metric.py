@@ -24,7 +24,7 @@ class Unreferenced():
             init_learning_rate=1e-4,
             l2_regular=0.1,
             margin=0.075, #from RUBER authors
-            train_dir='train_data/',
+            train_dir='train_data_new_hyperparameters/',
             is_training=True
             ):
         """
@@ -246,9 +246,6 @@ class Unreferenced():
 	print("training dir is " + self.train_dir)
 	#print("overwriting to twitter_data/train")
 	#ckpt = tf.train.get_checkpoint_state("twitter_data/train")
-	if not ckpt:
-	   print("failed to retrieve checkpoint, trying ADEM_data/data")
-	   ckpt = tf.train.get_checkpoint_state("ADEM_data/data")
         if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
             print ('Restoring model from %s'%ckpt.model_checkpoint_path)
             self.saver.restore(self.session, ckpt.model_checkpoint_path)

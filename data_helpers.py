@@ -173,7 +173,7 @@ def parse_twitter_dataset(raw_data_dir, processed_data_dir, filename="train.txt"
 			filter_set = ("/s>", " /d>", "", "/d>", "/d> <")
                         dialogue = filter(None, line.split("</s>"))
 			dialogue = filter(lambda x: (x not in filter_set), dialogue)
-            context = []
+            		context = []
                         for i in range(0, len(dialogue) - 1):
                             more = get_most_recent_context(context)
                             query = dialogue[i].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
@@ -187,12 +187,14 @@ def parse_twitter_dataset(raw_data_dir, processed_data_dir, filename="train.txt"
     return fquery_short, freply_short
       
 def get_most_recent_context(context):
+    context = [item.strip('\n').strip('\t').replace('\n','').replace('\t','') for item in context]
+
     if len(context) >= 3:
         return "{}{}{}".format(context[len(context) - 1], context[len(context) - 2], context[len(context) - 3])
     elif len(context) == 2:
         return "{}{}".format(context[len(context) - 1], context[len(context) - 2])
     elif len(context) == 1:
-        return "{}".format(context[len(context) - 1]
+        return "{}".format(context[len(context) - 1])
     else:
         return ""
 
@@ -213,8 +215,9 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
         print("Creating queries and replies dataset from personachat with context added (past three queries)")
         
 	for data_filename in os.listdir(raw_data_dir):
-            if file_type in data_filename and "no_cand" in data_filename and "revised" in data_filename:
+            if file_type in data_filename and "no_cand" in data_filename and "none" in data_filename:
                 data_filename = os.path.join(raw_data_dir, data_filename)
+		print("parsing" + data_filename)
                 with open(data_filename, "r") as datafile, \
                     open(fquery_filename, "w+") as queries, \
                         open(freply_filename, "w+") as replies:
@@ -222,7 +225,7 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
                     lines = datafile.readlines()
                     filtered_lines = [line for line in lines if 'persona:' not in line]
                     new_conversation = True
-                    context = list[]
+                    context = []
 
                     # change to new conversation if next line is a smaller number --> omitting last line edge case
                     for x in range(0, len(filtered_lines) - 2):
@@ -272,13 +275,13 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
                 replies.close()
     return fquery_short, freply_short
 
-# Run this first to create the embedding matrix ? 
 if __name__ == '__main__':
     # Argument is dataset. Twitter or Personachat 
-    query_max_length, reply_max_length = [40, 30]
+    query_max_length, reply_max_length = [20, 30]
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-dataset', help="Either Personachat or Twitter")
+
 
     args = parser.parse_args()
     if args.dataset=="twitter":
@@ -290,7 +293,7 @@ if __name__ == '__main__':
             print("Parsing twitter validation data")
             fquery_validate, freply_validate = parse_twitter_dataset(raw_data_dir, processed_validation_dir, filename="valid.txt")
     else:
-        raw_data_dir = './data'
+        raw_data_dir = './data/personachat'
         processed_train_dir = "./data/personachat/train/"
         processed_validation_dir = "./data/personachat/validation"
         print("Parsing personachat training data")

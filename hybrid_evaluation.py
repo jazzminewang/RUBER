@@ -99,19 +99,22 @@ if __name__ == '__main__':
     validation_dataset = args.validation_dataset #ADEM, personachat
     mode = args.mode # train or validate
 
-    qmax_length, rmax_length = [40, 30]
+    qmax_length, rmax_length = [20, 30]
 
     print("Mode: " + args.mode)
 
     training_fquery = train_dataset + "/train/queries.txt"
     training_freply = train_dataset + "/train/replies.txt"
     validation_fquery = validation_dataset + "/validation/queries.txt"
-    if args.reply_file and args.validation_dataset =="ADEM":
-        validation_freply_true = validation_dataset + "validation/true.txt"
-        validation_freply_generated = validation_dataset + args.reply_file
+    if args.validation_dataset =="ADEM":
+        validation_freply_true = validation_dataset + "/validation/true.txt"
+        if args.reply_file:
+             validation_freply_generated = validation_dataset + "/validation/" + args.reply_file
+        else:
+             validation_freply_generated = validation_dataset + "/validation/hred_replies.txt"
     else:
         #personachat
-        validation_freply_true = validation_dataset + "validation/replies.txt.true.sub"
+        validation_freply_true = validation_dataset + "/validation/replies.txt.true.sub"
         validation_freply_generated = validation_dataset + "/validation/replies.txt.sub"
 
     if args.mode == "train":
