@@ -67,9 +67,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # best logic:
-    # - data_dir (path for word2vec)
     # - dataset (ADEM, personachat, or twitter)
     # - mode (training or validation)
+    # --reply_file (optional)
 
     # File structure
 
@@ -90,78 +90,54 @@ if __name__ == '__main__':
             #   - [ assorted files for validation ]
     #   - train
             #   - [ assorted files for training ]
-    
-    parser.add_argument('mode') 
-    parser.add_argument('-reply_file')
-    parser.add_argument('-dataset')
+
+    data_dir = "./data"
+
+    parser.add_argument('dataset')
+    parser.add_argument('mode')
     args = parser.parse_args()
 
-    train_dir = 'ADEM_data/data'
-    data_dir = hybrid_dir = 'data'
+    dataset = args.dataset #ADEM, personachat, or twitter
+    mode = args.mode # train or validate
+
     qmax_length, rmax_length = [20, 30]
 
     print("Mode: " + args.mode)
-    is_training=True
 
-    if args.mode == "eval_ADEM":
-        data_dir = 'ADEM_data/data'
-	if args.dataset == "twitter":
-             hybrid_fquery = "twitter_data/train/queries.txt"
-             hybrid_freply = "twitter_data/train/replies.txt"
-	else:
-        	hybrid_fquery = 'personachat/better_turns/queries.txt'
-        	hybrid_freply = 'personachat/better_turns/replies.txt'
-        fquery = "queries.txt"
-        freply = args.reply_file
-        is_training=False
+    training_fquery = dataset + "/train/queries.txt"
+    training_freply = dataset + "/train/replies.txt"
+    validation_fquery = dataset + "/validation/queries.txt"
+    if args.reply_file and args.dataset=="ADEM":
+        validation_freply_true = dataset + "validation/true.txt"
+        validation_freply_generated = dataset + args.reply_file
     else:
-        if args.mode == "eval_personachat":
-            is_training=False
-	    hybrid_dir = 'data'
-            train_dir = 'data'
-	if args.dataset == "twitter":
-             fquery =  hybrid_fquery = "twitter_data/train/queries.txt"
-             freply =  hybrid_freply = "twitter_data/train/replies.txt"
-	     train_dir = "twitter_data/train"
-        else:
-	     fquery =  hybrid_fquery = "personachat/better_turns/queries.txt"
-             freply =  hybrid_freply = "personachat/better_turns/replies.txt"
+        validation_freply_true = dataset + "validation/replies.txt.true.sub"
+        validation_freply_generated = dataset + "/validation/replies.txt.sub"
+
+    if args.mode == "train":
+        is_training=True
+    else: 
+        is_training=False
 
     """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
-    print("Initializing Hybrid object with " + hybrid_fquery + " as training query file")
-    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%hybrid_fquery, '%s.embed'%hybrid_freply, is_training=is_training)
-
-    if args.mode == "eval_personachat":
-        # use validation queries and replies
-        fquery = "personachat/validation/queries.txt"
-        freply = "personachat/validation/replies.txt"
-
+    print("Initializing Hybrid object with " + training_fquery + " as training query file")
+    hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%training_fquery, '%s.embed'%training_freply, is_training=is_training)
     """test"""
-    if args.mode != "train":
-        print("Getting scores")
-
-
-        if args.mode == "eval_ADEM": 
-            print("Scoring ADEM data")
-	    print("training directory is " + data_dir)
-            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(hybrid_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(hybrid_fquery, qmax_length),'%s.vocab%d'%(hybrid_freply, rmax_length))
-	    csv_title = './results/' + freply + str(int(time.time())) + '.csv'
-        elif args.mode == "eval_personachat":
-            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(hybrid_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
-            csv_title = './results/personachat/' +  str(int(time.time())) + '.csv'
+    if args.mode == "validate":
+        scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, '%s.vocab%d'%(training_fquery, qmax_length),'%s.vocab%d'%(training_freply, rmax_length))
+        csv_title = './results/' + dataset + validation_freply_generated + str(int(time.time())) + '.csv'
 
         """write results to CSV"""
         with open(csv_title, 'w+') as csvfile:
             writer = csv.writer(csvfile, delimiter=',')
-            # Name the columns
             column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
             writer.writerow([col for col in column_titles])
             
             if args.mode != "eval_ADEM":
                 fquery = '%s.sub'%fquery
-		true = '%s.true.sub'%freply
+		        true = '%s.true.sub'%freply
                 freply = '%s.sub'%freply
             else:
                 true = "true.txt"

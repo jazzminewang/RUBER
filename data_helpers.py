@@ -286,8 +286,6 @@ if __name__ == '__main__':
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
-    print("Processing training files into vocab and embedding files")
-
     #make sure embed and vocab file paths are correct
     raw_data_dir = "./data"
     process_train_file(processed_train_dir, fquery_train, query_max_length)
