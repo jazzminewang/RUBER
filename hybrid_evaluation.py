@@ -31,10 +31,9 @@ class Hybrid():
                 gru_units, mlp_units,
                 is_training=is_training)
 
-    def train_unref(self, data_dir, fquery, freply):
+    def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true):
         print("training unreferenced metric")
-        self.unref.train(data_dir, fquery, freply)
-
+        self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true)
     def normalize(self, scores, smin=None, smax=None, coefficient=None, smallest_value=0):
         if not smin and not smax:
 	    smin = min(scores)

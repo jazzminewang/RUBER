@@ -261,8 +261,8 @@ class Unreferenced():
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
 	data_size = len(queries)
-	validation_queries = data_helpers.load_data(validation_fquery, self.qmax_length)
-        validation_replies = data_helpers.load_data(validation_freply_true, self.rmax_length)
+	validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
+        validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)
 	print("Writing validation + loss to " + data_dir)
         with self.session.as_default():
             self.init_model()
