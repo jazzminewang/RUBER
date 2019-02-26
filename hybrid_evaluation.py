@@ -19,7 +19,7 @@ class Hybrid():
             qmax_length=20,
             rmax_length=30,
             ref_method='max_min',
-            gru_units=500, mlp_units=[256, 512, 128],
+            gru_units=512, mlp_units=[256, 512, 128],
             is_training=True
         ):
         print("Initializing referenced model")
@@ -54,7 +54,7 @@ class Hybrid():
 	norm_ref_scores = self.normalize(ref_scores, coefficient=4, smallest_value=1)
         
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
-                fqvocab, frvocab, init=False, train_dir=train_dir)
+                fqvocab, frvocab, init=False)
         norm_unref_scores = self.normalize(unref_scores, coefficient=4, smallest_value=1)
 
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     parser.add_argument('train_dataset')
     parser.add_argument('validation_dataset')
     parser.add_argument('mode')
-    parser.add_argument('-reply_file')
+    parser.add_argument('--reply_file')
     args = parser.parse_args()
 
     train_dataset = args.train_dataset #personachat or twitter
@@ -130,7 +130,7 @@ if __name__ == '__main__':
     """test"""
     if args.mode == "validate":
         scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, '%s.vocab%d'%(training_fquery, qmax_length),'%s.vocab%d'%(training_freply, rmax_length))
-        csv_title = './results/' + dataset + validation_freply_generated + str(int(time.time())) + '.csv'
+        csv_title = './results/'  + validation_freply_generated + str(int(time.time())) + '.csv'
 
         """write results to CSV"""
         with open(csv_title, 'w+') as csvfile:
@@ -138,9 +138,9 @@ if __name__ == '__main__':
             column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
             writer.writerow([col for col in column_titles])
             
-            with open(validation_fquery, "r") as queries, \
-                    open(validation_freply_generated, "r") as scored_replies, \
-                        open(validation_freply_true, "r") as true_replies:
+            with open(os.path.join(data_dir, validation_fquery), "r") as queries, \
+                    open(os.path.join(data_dir, validation_freply_generated), "r") as scored_replies, \
+                        open(os.path.join(data_dir, validation_freply_true), "r") as true_replies:
                 for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
                     query = query.rstrip()
                     scored_reply = scored_reply.rstrip()

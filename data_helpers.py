@@ -170,11 +170,12 @@ def parse_twitter_dataset(raw_data_dir, processed_data_dir, filename="train.txt"
                     lines = datafile.readlines()
 
                     for line in lines:
-			filter_set = ("/s>", " /d>", "", "/d>", "/d> <")
+			filter_set = ("/s>", "</d>", " /d>", "/d>", "/d> <")
                         dialogue = filter(None, line.split("</s>"))
+			dialogue = [x.strip() for x in dialogue]
 			dialogue = filter(lambda x: (x not in filter_set), dialogue)
             		context = []
-                        for i in range(0, len(dialogue) - 1):
+                        for i in range(0, len(dialogue) - 2):
                             more = get_most_recent_context(context)
                             query = dialogue[i].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
                             context.append(query)
@@ -324,9 +325,9 @@ if __name__ == '__main__':
     process_train_file(processed_validation_dir, fquery_validate, query_max_length)
     process_train_file(processed_validation_dir, freply_validate, reply_max_length)
 
-    # fqvocab = '%s.vocab%d'%(fquery_validate, query_max_length)
-    # frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
+    fqvocab = '%s.vocab%d'%(fquery_validate, query_max_length)
+    frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
 
-    # make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
-    # make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
+    make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
+    make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
     pass

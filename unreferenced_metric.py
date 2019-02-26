@@ -21,10 +21,10 @@ class Unreferenced():
             frembed,
             gru_num_units,
             mlp_units,
-            init_learning_rate=1e-4,
+            init_learning_rate=0.001,
             l2_regular=0.1,
-            margin=0.075, #from RUBER authors
-            train_dir='train_data_new_hyperparameters/',
+            margin=0.5, 
+            train_dir='train_data_batch_norm_128',
             is_training=True
             ):
         """
@@ -128,6 +128,10 @@ class Unreferenced():
                             activation_fn=tf.tanh,
                             weight_regularizer=tf.contrib.layers. \
                                     l2_regularizer(l2_regular))
+			inputs = tf.contrib.layers.batch_norm(
+			    inputs,
+			    center=True, scale=True,
+			    is_training=is_training)
                 self.test = inputs
                 # dropout layer
                 self.training = tf.placeholder(tf.bool, name='training')
@@ -324,20 +328,14 @@ class Unreferenced():
  #                   """
 
 
-    def scores(self, data_dir, fquery, freply, fqvocab, frvocab, init=False, train_dir=None):
+    def scores(self, data_dir, fquery, freply, fqvocab, frvocab, init=False):
         if not init:
 	    print("not inited, initing now")
             self.init_model()
 
-	#train_dir = "ADEM_data/data"	
-	if train_dir is None: 
-            queries = data_helpers.load_file(data_dir, fquery)
-            replies = data_helpers.load_file(data_dir, freply)
-	    data_size = len(queries)
-	else:
-            queries = data_helpers.load_file(train_dir, fquery)
-            replies = data_helpers.load_file(train_dir, freply)
-            data_size = len(queries)
+        queries = data_helpers.load_file(data_dir, fquery)
+        replies = data_helpers.load_file(data_dir, freply)
+	data_size = len(queries)
             
 	qvocab = data_helpers.load_vocab(data_dir, fqvocab)
         rvocab = data_helpers.load_vocab(data_dir, frvocab)

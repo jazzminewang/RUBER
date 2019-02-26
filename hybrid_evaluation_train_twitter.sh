@@ -1,3 +1,3 @@
-python data_helpers.py -twitter=True -validate=True && \
+python data_helpers.py -dataset="twitter" && \
 python hybrid_evaluation.py \
-    "train" -dataset="twitter"
+    "twitter" "twitter" "train"
