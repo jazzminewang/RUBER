@@ -25,7 +25,7 @@ class Unreferenced():
             init_learning_rate=1e-4,
             l2_regular=0.1,
             margin=0.5,
-            train_dir='train_data/',
+            train_dir='infersent/',
             is_training=True
             ):
         """
