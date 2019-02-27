@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 import data_helpers
 import pdb
+from InferSent.models import InferSent
 
 class Unreferenced():
     """Unreferenced Metric
@@ -53,54 +54,64 @@ class Unreferenced():
         config.gpu_options.allow_growth = True
         self.session = tf.Session(config=config)
 
+        # initialize InferSent variables
+        print("Initializing InferSent variables")
+        V = 2
+        MODEL_PATH = 'encoder/infersent%s.pkl' % V
+        params_model = {'bsize': 64, 'word_emb_dim': 300, 'enc_lstm_dim': 2048,
+                        'pool_type': 'max', 'dpout_model': 0.0, 'version': V}
+        infersent = InferSent(params_model)
+        infersent.load_state_dict(torch.load(MODEL_PATH))
+        W2V_PATH = 'fastText/crawl-300d-2M.vec'
+        infersent.set_w2v_path(W2V_PATH)
+        infersent.build_vocab(sentences, tokenize=True)
+
+        print("Finished initializing unreferenced metric")
+
         """graph"""
 
         with self.session.as_default():
             # build bidirectional gru rnn and get final state as embedding
-            def get_birnn_embedding(sizes, inputs, embed, scope):
-                embedding = tf.Variable(embed, dtype=tf.float32,
-                        name="embedding_matrix")
-                with tf.variable_scope('forward'):
-                    fw_cell = tf.contrib.rnn.GRUCell(gru_num_units)
-                with tf.variable_scope('backward'):
-                    bw_cell = tf.contrib.rnn.GRUCell(gru_num_units)
-                inputs = tf.nn.embedding_lookup(embedding, inputs)
-                # outputs, state_fw, state_bw
-                _, state_fw, state_bw = tf.contrib.rnn.static_bidirectional_rnn(
-                        fw_cell, bw_cell,
-                        # make inputs as [max_length, batch_size=1, vec_dim]
-                        tf.unstack(tf.transpose(inputs, perm=[1, 0, 2])),
-                        sequence_length=sizes,
-                        dtype=tf.float32,
-                        scope=scope)
-                # [batch_size, gru_num_units * 2]
-                return tf.concat([state_fw, state_bw], 1)
+            # def get_birnn_embedding(sizes, inputs, embed, scope):
+            #     embedding = tf.Variable(embed, dtype=tf.float32,
+            #             name="embedding_matrix")
+            #     with tf.variable_scope('forward'):
+            #         fw_cell = tf.contrib.rnn.GRUCell(gru_num_units)
+            #     with tf.variable_scope('backward'):
+            #         bw_cell = tf.contrib.rnn.GRUCell(gru_num_units)
+            #     inputs = tf.nn.embedding_lookup(embedding, inputs)
+            #     # outputs, state_fw, state_bw
+            #     _, state_fw, state_bw = tf.contrib.rnn.static_bidirectional_rnn(
+            #             fw_cell, bw_cell,
+            #             # make inputs as [max_length, batch_size=1, vec_dim]
+            #             tf.unstack(tf.transpose(inputs, perm=[1, 0, 2])),
+            #             sequence_length=sizes,
+            #             dtype=tf.float32,
+            #             scope=scope)
+            #     # [batch_size, gru_num_units * 2]
+            #     return tf.concat([state_fw, state_bw], 1)
 
-            # query GRU bidirectional RNN
-            with tf.variable_scope('query_bidirectional_rnn'):
-                self.query_sizes = tf.placeholder(tf.int32,
-                        # batch_size
-                        shape=[None], name="query_sizes")
+            # Get InferSent representation of query
+            with tf.variable_scope('query_infersent'):
+                # self.query_sizes = tf.placeholder(tf.int32,
+                #         # batch_size
+                #         shape=[None], name="query_sizes")
                 self.query_inputs = tf.placeholder(tf.int32,
                         # [batch_size, sequence_length]
                         shape=[None, self.qmax_length],
                         name="query_inputs")
                 with tf.device('/gpu:0'):
-                    query_embedding = get_birnn_embedding(
-                            self.query_sizes, self.query_inputs,
-                            qembed, 'query_rgu_birnn')
+                    query_embedding = infersent.encode(self.query_inputs, tokenize=True)
 
-            # reply GRU bidirectional RNN
-            with tf.variable_scope('reply_bidirectional_rnn'):
-                self.reply_sizes = tf.placeholder(tf.int32,
-                        shape=[None], name="reply_sizes")
+            # Get InferSent representation of reply
+            with tf.variable_scope('reply_infersent'):
+                # self.reply_sizes = tf.placeholder(tf.int32,
+                #         shape=[None], name="reply_sizes")
                 self.reply_inputs = tf.placeholder(tf.int32,
                         shape=[None, self.rmax_length],
                         name="reply_inputs")
                 with tf.device('/gpu:0'):
-                    reply_embedding = get_birnn_embedding(
-                        self.reply_sizes, self.reply_inputs,
-                        rembed, 'reply_gru_birnn')
+                    reply_embedding = infersent.encode(self.reply_inputs, tokenize=True)
 
             # quadratic feature as qT*M*r
             with tf.variable_scope('quadratic_feature'):
