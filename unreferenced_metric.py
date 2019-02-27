@@ -242,14 +242,16 @@ class Unreferenced():
 
         return step, loss
 
-    def init_model(self):
+    def init_model(self, checkpoint_dir=None):
         """
         Initialize all variables or load model from checkpoint
         """
-        ckpt = tf.train.get_checkpoint_state(self.train_dir)
-	print("Loading checkpoint from training dir: " + self.train_dir)
-	#print("overwriting to twitter_data/train")
-	#ckpt = tf.train.get_checkpoint_state("twitter_data/train")
+        if not checkpoint_dir:
+            checkpoint_dir = self.train_dir            
+
+        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+	print("Loading checkpoint from training dir: " + checkpoint_dir)
+
         if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
             print ('Restoring model from %s'%ckpt.model_checkpoint_path)
             self.saver.restore(self.session, ckpt.model_checkpoint_path)
@@ -328,10 +330,10 @@ class Unreferenced():
  #                   """
 
 
-    def scores(self, data_dir, fquery, freply, fqvocab, frvocab, init=False):
+    def scores(self, data_dir, fquery, freply, fqvocab, frvocab, checkpoint_dir, init=False):
         if not init:
 	    print("not inited, initing now")
-            self.init_model()
+            self.init_model(checkpoint_dir=checkpoint_dir)
 
         queries = data_helpers.load_file(data_dir, fquery)
         replies = data_helpers.load_file(data_dir, freply)
