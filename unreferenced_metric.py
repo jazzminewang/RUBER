@@ -247,7 +247,7 @@ class Unreferenced():
         Initialize all variables or load model from checkpoint
         """
         ckpt = tf.train.get_checkpoint_state(self.train_dir)
-	print("training dir is " + self.train_dir)
+	print("Loading checkpoint from training dir: " + self.train_dir)
 	#print("overwriting to twitter_data/train")
 	#ckpt = tf.train.get_checkpoint_state("twitter_data/train")
         if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):

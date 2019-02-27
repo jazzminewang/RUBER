@@ -1,4 +1,5 @@
-python hybrid_evaluation.py "eval_ADEM" -dataset="twitter" \
+python hybrid_evaluation.py \
+    "twitter" "twitter" "validate" \
     -reply_file="de_replies.txt"
 	#-reply_file="human_replies.txt"
     # -reply_file="de_replies.txt"

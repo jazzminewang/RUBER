@@ -92,7 +92,7 @@ if __name__ == '__main__':
     parser.add_argument('train_dataset')
     parser.add_argument('validation_dataset')
     parser.add_argument('mode')
-    parser.add_argument('--reply_file')
+    parser.add_argument('-reply_file')
     args = parser.parse_args()
 
     train_dataset = args.train_dataset #personachat or twitter
