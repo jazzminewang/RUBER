@@ -49,7 +49,7 @@ class Hybrid():
 	    ret = [smallest_value + ((s - smin) / diff) for s in scores]
         return ret
 
-    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab):
+    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab, checkpoint_dir):
         ref_scores = self.ref.scores(data_dir, freply, fgenerated)
 	norm_ref_scores = self.normalize(ref_scores, coefficient=4, smallest_value=1)
         
@@ -59,10 +59,9 @@ class Hybrid():
 
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
 
-
-    def validate_to_csv(checkpoint_dir, data_dir, validation_fquery, validation_freply_generated, validation_freply_true, training_fquery, qmax_length, training_freply, rmax_length):
+    def validate_to_csv(self, checkpoint_dir, data_dir, validation_fquery, validation_freply_generated, validation_freply_true, training_fquery, qmax_length, training_freply, rmax_length):
         scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores \
-                = hybrid.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, \
+                = self.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, \
                     '%s.vocab%d'%(training_fquery, qmax_length),'%s.vocab%d'%(training_freply, rmax_length), checkpoint_dir)
 
         csv_title = os.path.join('./results', checkpoint_dir, validation_freply_generated + str(int(time.time())) + ".csv")
@@ -167,6 +166,8 @@ if __name__ == '__main__':
     hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%training_fquery, '%s.embed'%training_freply, is_training=is_training)
     """test"""
     if args.mode == "validate":
+	print("First checkpoint dir " + checkpoint_dirs[0])
+	print("First reply file " + reply_files[0])
         for checkpoint_dir, reply_file in zip(checkpoint_dirs, reply_files):
             print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
             validation_freply_generated = os.path.join(validation_dataset, "validation", reply_file)
