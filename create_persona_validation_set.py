@@ -5,75 +5,40 @@ from tensorflow.contrib import learn
 from pathlib import Path
 import time
 from shutil import copyfile
+from data_helpers import parse_persona_chat_dataset, process_train_file, make_embedding_matrix, load_word2vec
 import random
 
-def create_validation_set():
-    print("Creating validation set")
-    directory = os.path.join('data/', 'validation_original_personachat')
-    fquery_filename = os.path.join('data/', 'personachat', 'validation', "queries.txt")
-    freply = os.path.join('data/', 'personachat', 'validation', "replies.txt")
-
-    for data_filename in os.listdir(directory):
-        data_filename = os.path.join(directory, data_filename)
-
-        if "no_cand" in data_filename and "revised" in data_filename:
-            with open(data_filename, "r") as datafile, open(fquery_filename, "w+") as queries, open(freply, "w+") as replies:
-                lines = datafile.readlines()
-                filtered_lines = [line for line in lines if 'persona:' not in line]
-                print("Example filtered line")
-                print(filtered_lines[0])
-
-                new_conversation = True
-
-                # change to new conversation if next line is a smaller number --> omitting last line edge case
-                for x in range(0, len(filtered_lines) - 2):
-                    original = filtered_lines[x]
-                    number = int(original[:2])
-                    split = (original[2:]).split("\t")
-                    next_number = int(filtered_lines[x + 1][:2])
-                    
-                    if new_conversation:
-                        # add first part only as query
-                        print("new conversation")
-                        queries.write(split[0] + "\n")
-                        print("wrote " + split[0] + " to queries")
-                        if len(split) > 1:
-                            replies.write(split[1])
-                            queries.write(split[1])
-                            print("wrote " + split[1] + " to queries and replies")
-                        new_conversation = False
-                    elif next_number < number:
-                        print("ending conversation")
-                        # next line is new conversation, so add last part as only a reply
-                        new_conversation = True
-                        if len(split) > 1:
-                            replies.write(split[0])
-                            queries.write(split[0])
-                            replies.write(split[1])
-                        else:
-                            replies.write(split[0])
-                    else:
-                        print("continuing conversation")
-                        #write both parts as queries and replies
-                        if len(split) > 1:
-                            replies.write(split[0])
-                            queries.write(split[0])
-                            replies.write(split[1])
-                            queries.write(split[1])
-                        else:
-                            queries.write(split[0])
-                            replies.write(split[0])
-                    
-                    replies.write(filtered_lines[len(filtered_lines) - 1])
-            datafile.close()
-            queries.close()
-            replies.close()
-	    copyfile(freply, freply + ".true.sub")
-	    
-	    reply_true = open(freply).readlines()
-	    random.shuffle(reply_true)
-            open(freply + ".sub", "w+").writelines(reply_true)
-
-	    copyfile(fquery_filename, fquery_filename + ".sub")
 if __name__ == '__main__':
-    create_validation_set()
+    raw_data_dir = "data/validation_raw_personachat"
+    processed_data_dir = processed_train_dir = "data/personachat/validation"
+    fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_data_dir, "valid")
+    freply = os.path.join(processed_data_dir, freply_train)
+    fquery = os.path.join(processed_data_dir, fquery_train)
+
+    copyfile(freply, freply + ".true.sub")
+    reply_true = open(freply).readlines()
+    random.shuffle(reply_true)
+    open(freply + ".sub", "w+").writelines(reply_true)
+    copyfile(fquery, fquery + ".sub")
+
+    query_max_length, reply_max_length = [20, 30]
+    # Path to word2vec weights
+    fqword2vec = 'GoogleNews-vectors-negative300.txt'
+    frword2vec = 'GoogleNews-vectors-negative300.txt'
+
+    print("Processing training files into vocab and embedding files")
+
+    #make sure embed and vocab file paths are correct
+    raw_data_dir = "./data"
+    process_train_file(processed_train_dir, fquery_train, query_max_length)
+    process_train_file(processed_train_dir, freply_train, reply_max_length)
+
+    fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
+    frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
+
+    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
+    make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
+
+    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
+    make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
+    pass

@@ -19,7 +19,7 @@ class Hybrid():
             qmax_length=20,
             rmax_length=30,
             ref_method='max_min',
-            gru_units=128, mlp_units=[256, 512, 128],
+            gru_units=512, mlp_units=[256, 512, 128],
             is_training=True
         ):
         print("Initializing referenced model")
@@ -29,13 +29,11 @@ class Hybrid():
                 os.path.join(data_dir,fqembed),
                 os.path.join(data_dir,frembed),
                 gru_units, mlp_units,
-                train_dir=train_dir, 
                 is_training=is_training)
 
-    def train_unref(self, data_dir, fquery, freply):
+    def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true):
         print("training unreferenced metric")
-        self.unref.train(data_dir, fquery, freply)
-
+        self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true)
     def normalize(self, scores, smin=None, smax=None, coefficient=None, smallest_value=0):
         if not smin and not smax:
 	    smin = min(scores)
@@ -51,89 +49,32 @@ class Hybrid():
 	    ret = [smallest_value + ((s - smin) / diff) for s in scores]
         return ret
 
-    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab):
-	print("training dir is ")
-	print(train_dir)
-        ref_scores = self.ref.scores(data_dir, freply, fgenerated, train_dir=train_dir)
+    def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab, checkpoint_dir):
+        ref_scores = self.ref.scores(data_dir, freply, fgenerated)
 	norm_ref_scores = self.normalize(ref_scores, coefficient=4, smallest_value=1)
         
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
-                fqvocab, frvocab, init=False, train_dir=train_dir)
+                fqvocab, frvocab, checkpoint_dir, init=False)
         norm_unref_scores = self.normalize(unref_scores, coefficient=4, smallest_value=1)
 
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('mode') 
-    parser.add_argument('-reply_file')
+    def validate_to_csv(self, checkpoint_dir, data_dir, validation_fquery, validation_freply_generated, validation_freply_true, training_fquery, qmax_length, training_freply, rmax_length):
+        scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores \
+                = self.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, \
+                    '%s.vocab%d'%(training_fquery, qmax_length),'%s.vocab%d'%(training_freply, rmax_length), checkpoint_dir)
 
-    args = parser.parse_args()
-
-    train_dir = 'ADEM_data/data'
-    data_dir = hybrid_dir = 'data'
-    qmax_length, rmax_length = [20, 30]
-
-    print("Mode: " + args.mode)
-    is_training=True
-
-    if args.mode == "eval_ADEM":
-        data_dir = 'ADEM_data/data'
-        hybrid_dir = 'data'
-        hybrid_fquery = 'personachat/better_turns/queries.txt'
-        hybrid_freply = 'personachat/better_turns/replies.txt'
-        fquery = "queries.txt"
-        freply = args.reply_file
-        is_training=False
-    else:
-        if args.mode == "eval_personachat":
-            is_training=False
-	    hybrid_dir = 'data'
-        fquery =  hybrid_fquery = "personachat/better_turns/queries.txt"
-        freply =  hybrid_freply = "personachat/better_turns/replies.txt"
-
-    """word2vec file"""
-    frword2vec = 'GoogleNews-vectors-negative300.txt'
-
-    print("Initializing Hybrid object")
-    hybrid = Hybrid(hybrid_dir, frword2vec, '%s.embed'%fquery, '%s.embed'%freply, is_training=is_training)
-
-    if args.mode == "eval_personachat":
-        # use validation queries and replies
-        fquery = "personachat/validation/queries.txt"
-        freply = "personachat/validation/replies.txt"
-
-    """test"""
-    if args.mode != "train":
-        print("Getting scores")
-
-
-        if args.mode == "eval_ADEM": 
-            print("Scoring ADEM data")
-	    print("training directory is " + data_dir)
-            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(hybrid_dir, fquery, 'true.txt' ,freply, '%s.vocab%d'%(hybrid_fquery, qmax_length),'%s.vocab%d'%(hybrid_freply, rmax_length))
-	    csv_title = './results/' + freply + str(int(time.time())) + '.csv'
-        elif args.mode == "eval_personachat":
-            scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores = hybrid.scores(data_dir, '%s.sub'%fquery, '%s.true.sub'%freply, '%s.sub'%freply, '%s.vocab%d'%(fquery, qmax_length),'%s.vocab%d'%(freply, rmax_length))
-            csv_title = './results/personachat/' +  str(int(time.time())) + '.csv'
-
+        csv_title = os.path.join('./results', checkpoint_dir, validation_freply_generated + str(int(time.time())) + ".csv")
+        
         """write results to CSV"""
         with open(csv_title, 'w+') as csvfile:
             writer = csv.writer(csvfile, delimiter=',')
-            # Name the columns
             column_titles = ["Query", "Scored reply", "Ground truth reply", "Score", "Ref score", "Normed ref score", "Unref score", "Normed unref score"]
             writer.writerow([col for col in column_titles])
             
-            if args.mode != "eval_ADEM":
-                fquery = '%s.sub'%fquery
-		true = '%s.true.sub'%freply
-                freply = '%s.sub'%freply
-            else:
-                true = "true.txt"
-
-            with open(data_dir + "/" + fquery, "r") as queries, \
-                    open(data_dir+ "/" + freply, "r") as scored_replies, \
-                        open(data_dir+ "/"  + true, "r") as true_replies:
+            with open(os.path.join(data_dir, validation_fquery), "r") as queries, \
+                    open(os.path.join(data_dir, validation_freply_generated), "r") as scored_replies, \
+                        open(os.path.join(data_dir, validation_freply_true), "r") as true_replies:
                 for query, scored_reply, true_reply, score, ref_score, norm_ref_score, unref_score, norm_unref_score in zip(queries, scored_replies, true_replies, scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores):
                     query = query.rstrip()
                     scored_reply = scored_reply.rstrip()
@@ -146,7 +87,98 @@ if __name__ == '__main__':
         )
 
         print("Wrote  model results to " + csv_title)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    # best logic:
+    # - dataset (ADEM, personachat, or twitter)
+    # - mode (training or validation)
+    # --reply_file (optional)
+
+    # File structure
+
+    # data
+    # -- word2vec embeddings
+    # - ADEM
+    #   - validation
+        #   - [ assorted files for validation ]
+    #   - train
+        #   - [ assorted files for training ]
+    # - personachat
+    #   - validation
+            #   - [ assorted files for validation ]
+    #   - train [RENAME]
+            #   - [ assorted files for training ]
+    # - twitter
+    #   - validation
+            #   - [ assorted files for validation ]
+    #   - train
+            #   - [ assorted files for training ]
+
+    data_dir = "./data"
+
+    parser.add_argument('train_dataset')
+    parser.add_argument('validation_dataset')
+    parser.add_argument('mode')
+    parser.add_argument('-reply_files', nargs='+')
+    parser.add_argument('-checkpoint_dirs', nargs='+')
+    args = parser.parse_args()
+
+    train_dataset = args.train_dataset #personachat or twitter
+    validation_dataset = args.validation_dataset #ADEM, personachat
+    mode = args.mode # train or validate
+    if args.reply_files and args.checkpoint_dirs:
+        checkpoint_dirs = args.checkpoint_dirs
+        reply_files = args.reply_files
+        print("Checkpoint dirs: ")
+        print(checkpoint_dirs)
+        print("Reply files: ")
+	print(reply_files)
+
+    qmax_length, rmax_length = [20, 30]
+
+    print("Mode: " + args.mode)
+
+    training_fquery = train_dataset + "/train/queries.txt"
+    training_freply = train_dataset + "/train/replies.txt"
+    validation_fquery = validation_dataset + "/validation/queries.txt"
+    if args.validation_dataset =="ADEM":
+        validation_freply_true = validation_dataset + "/validation/true.txt"
+        if reply_files:
+             validation_freply_generated = validation_dataset + "/validation/" + reply_files[0]
+        else:
+             validation_freply_generated = validation_dataset + "/validation/hred_replies.txt"
+    else:
+        #personachat
+        validation_freply_true = validation_dataset + "/validation/replies.txt.true.sub"
+        validation_freply_generated = validation_dataset + "/validation/replies.txt.sub"
+
+    if args.mode == "train":
+        is_training=True
+    else: 
+        is_training=False
+
+    """word2vec file"""
+    frword2vec = 'GoogleNews-vectors-negative300.txt'
+
+    print("Initializing Hybrid object with " + training_fquery + " as training query file")
+    hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%training_fquery, '%s.embed'%training_freply, is_training=is_training)
+    """test"""
+    if args.mode == "validate":
+	print("First checkpoint dir " + checkpoint_dirs[0])
+	print("First reply file " + reply_files[0])
+        for checkpoint_dir, reply_file in zip(checkpoint_dirs, reply_files):
+            print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
+            validation_freply_generated = os.path.join(validation_dataset, "validation", reply_file)
+
+            hybrid.validate_to_csv(
+                checkpoint_dir, data_dir, validation_fquery, \
+                    validation_freply_generated, validation_freply_true, \
+                        training_fquery, qmax_length, training_freply, rmax_length)
+
     else:
         """train"""
         print("Training")
-        hybrid.train_unref(data_dir, fquery, freply)
+	print("Data dir is " + data_dir)
+        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)

@@ -16,6 +16,8 @@ def load_file(data_dir, fname):
     fname = os.path.join(data_dir, fname)
     print 'Loading file %s'%(fname)
     lines = open(fname).readlines()
+    print("Num lines in file: ")
+    print(len(lines))
     return [line.rstrip() for line in lines]
 
 def process_train_file(data_dir, fname, max_length, min_frequency=10):
@@ -134,12 +136,19 @@ def load_word2vec(data_dir, fword2vec):
             vecs[ps[0]] = map(float, ps[1:])
     return vecs, vec_dim, size
 
-def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
-    """
-    Return:
-        file path to file with all queries
-        file path to file with all replies
-    """
+def parse_twitter_dataset(raw_data_dir, processed_data_dir, filename="train.txt"):
+    # end-of-utterance: </s>
+    # end-of-dialogue: </d>
+    # first speaker: <first_speaker>
+    # second speaker: <second_speaker>
+    # third speaker: <third_speaker>
+    # minor speaker: <minor_speaker>
+    # voice over: <voice_over>
+    # off screen: <off_screen>
+    # pause: <pause>
+    
+    # one dialogue per line
+
     fquery_filename = os.path.join(processed_data_dir, "queries.txt")
     freply_filename = os.path.join(processed_data_dir, "replies.txt")
     fquery_file = Path(fquery_filename)
@@ -147,11 +156,69 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
     fquery_short = "queries.txt" 
     freply_short = "replies.txt"
     if not fquery_file.exists() and not freply_file.exists():
-        print("Creating queries and replies dataset")
+        print("Creating queries and replies dataset from twitter dataset")
         
 	for data_filename in os.listdir(raw_data_dir):
-            if "train" in data_filename and "no_cand" in data_filename and "revised" in data_filename:
+		if data_filename == filename:
+                    data_filename = os.path.join(raw_data_dir, data_filename)
+		else:
+		    continue
+                with open(data_filename, "r") as datafile, \
+                    open(fquery_filename, "w+") as queries, \
+                        open(freply_filename, "w+") as replies:
+
+                    lines = datafile.readlines()
+
+                    for line in lines:
+			filter_set = ("/s>", "</d>", " /d>", "/d>", "/d> <")
+                        dialogue = filter(None, line.split("</s>"))
+			dialogue = [x.strip() for x in dialogue]
+			dialogue = filter(lambda x: (x not in filter_set), dialogue)
+            		context = []
+                        for i in range(0, len(dialogue) - 2):
+                            more = get_most_recent_context(context)
+                            query = dialogue[i].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
+                            context.append(query)
+                            query = query + more
+                            reply = dialogue[i + 1].strip().lstrip("<first_speaker>").lstrip("<second_speaker>").strip().lstrip("<at>")
+                            queries.write(query + "\n")
+                            replies.write(reply + "\n")
+    print("Wrote queries to " + fquery_filename)
+    print("Wrote replies to " + freply_filename)
+    return fquery_short, freply_short
+      
+def get_most_recent_context(context):
+    context = [item.strip('\n').strip('\t').replace('\n','').replace('\t','') for item in context]
+
+    if len(context) >= 3:
+        return "{}{}{}".format(context[len(context) - 1], context[len(context) - 2], context[len(context) - 3])
+    elif len(context) == 2:
+        return "{}{}".format(context[len(context) - 1], context[len(context) - 2])
+    elif len(context) == 1:
+        return "{}".format(context[len(context) - 1])
+    else:
+        return ""
+
+def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="train"):
+    """
+    Return:
+        file path to file with all queries
+        file path to file with all replies
+    """
+    
+    fquery_filename = os.path.join(processed_data_dir, "queries.txt")
+    freply_filename = os.path.join(processed_data_dir, "replies.txt")
+    fquery_file = Path(fquery_filename)
+    freply_file = Path(freply_filename)
+    fquery_short = "queries.txt" 
+    freply_short = "replies.txt"
+    if not fquery_file.exists() and not freply_file.exists():
+        print("Creating queries and replies dataset from personachat with context added (past three queries)")
+        
+	for data_filename in os.listdir(raw_data_dir):
+            if file_type in data_filename and "no_cand" in data_filename and "none" in data_filename:
                 data_filename = os.path.join(raw_data_dir, data_filename)
+		print("parsing" + data_filename)
                 with open(data_filename, "r") as datafile, \
                     open(fquery_filename, "w+") as queries, \
                         open(freply_filename, "w+") as replies:
@@ -159,6 +226,7 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
                     lines = datafile.readlines()
                     filtered_lines = [line for line in lines if 'persona:' not in line]
                     new_conversation = True
+                    context = []
 
                     # change to new conversation if next line is a smaller number --> omitting last line edge case
                     for x in range(0, len(filtered_lines) - 2):
@@ -169,69 +237,78 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir):
                         
                         if new_conversation:
                             # add first part only as query
-                            queries.write(split[0] + "\n")
+                            queries.write(split[0] + get_most_recent_context(context))
+                            context.append(split[0])
                             if len(split) > 1:
                                 replies.write(split[1])
-                                queries.write(split[1])
+                                queries.write(split[1] + get_most_recent_context(context))
+                                context.append(split[1])
                             new_conversation = False
                         elif next_number < number:
-                            # next line is new conversation, so add last part as only a reply
+                            # next line is new conversation, so add last part as only a reply. Also, clear context.
                             new_conversation = True
                             if len(split) > 1:
                                 replies.write(split[0])
-                                queries.write(split[0])
+                                queries.write(split[0] + get_most_recent_context(context))
                                 replies.write(split[1])
                             else:
                                 replies.write(split[0])
+                            context = []
                         else:
                             #write both parts as queries and replies
                             if len(split) > 1:
                                 replies.write(split[0])
-                                queries.write(split[0])
+                                queries.write(split[0]+ get_most_recent_context(context))
+                                context.append(split[0])
                                 replies.write(split[1])
-                                queries.write(split[1])
+                                queries.write(split[1] + get_most_recent_context(context))
+                                context.append(split[1])
                             else:
-                                queries.write(split[0])
+                                queries.write(split[0]+ get_most_recent_context(context))
                                 replies.write(split[0])
+                                context.append(split[1])
                     
                     replies.write(filtered_lines[len(filtered_lines) - 1])
                 datafile.close()
+		print(fquery_filename)
+		print(freply_filename)
                 queries.close()
                 replies.close()
     return fquery_short, freply_short
 
-# Run this first to create the embedding matrix ? 
 if __name__ == '__main__':
-    raw_data_dir = './data'
-    processed_train_dir = './data/personachat/better_turns/'
-    processed_validation_dir = './data/personachat/validation/'
+    # Argument is dataset. Twitter or Personachat 
     query_max_length, reply_max_length = [20, 30]
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-validate', help="pass in validate only if you want to create validation data") 
+    parser.add_argument('-dataset', help="Either Personachat or Twitter")
+
 
     args = parser.parse_args()
-
-    """
-    PERSONA CHAT
-    modes: create training dataset
-    create embedding files for validation dataset
-    """
-    print("Parsing persona chat datasets")
-
-    fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
-    if args.validate:
-        print("Also parsing validation dataset")
+    if args.dataset=="twitter":
+	    raw_data_dir = "./data/twitter"
+            processed_train_dir = "./data/twitter/train/"
+            processed_validation_dir = "./data/twitter/validation"
+            print("Parsing twitter training data")
+            fquery_train, freply_train = parse_twitter_dataset(raw_data_dir, processed_train_dir)
+            print("Parsing twitter validation data")
+            fquery_validate, freply_validate = parse_twitter_dataset(raw_data_dir, processed_validation_dir, filename="valid.txt")
+    else:
+        raw_data_dir = './data/personachat'
+        processed_train_dir = "./data/personachat/train/"
+        processed_validation_dir = "./data/personachat/validation"
+        print("Parsing personachat training data")
+        fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
+        print("Parsing personachat validation data")
         fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
+
 
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
-    print("Processing training files into vocab and embedding files")
-
-    # make sure embed and vocab file paths are correct
-
+    #make sure embed and vocab file paths are correct
+    raw_data_dir = "./data"
     process_train_file(processed_train_dir, fquery_train, query_max_length)
     process_train_file(processed_train_dir, freply_train, reply_max_length)
 
@@ -243,4 +320,14 @@ if __name__ == '__main__':
 
     word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
     make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
+
+    print("Validation")
+    process_train_file(processed_validation_dir, fquery_validate, query_max_length)
+    process_train_file(processed_validation_dir, freply_validate, reply_max_length)
+
+    fqvocab = '%s.vocab%d'%(fquery_validate, query_max_length)
+    frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
+
+    make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
+    make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
     pass
