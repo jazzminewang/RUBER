@@ -44,10 +44,9 @@ class Hybrid():
 		log_dir=log_dir
                 )
 
-    def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true):
+    def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true, additional_negative_samples):
         print("training unreferenced metric")
-        self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true)
-
+        self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true, additional_negative_samples)
     def normalize(self, scores, smin=None, smax=None, coefficient=None, smallest_value=0):
         if not smin and not smax:
 	    smin = min(scores)
@@ -242,4 +241,5 @@ if __name__ == '__main__':
         """train"""
         print("Training")
 	print("Data dir is " + data_dir)
-        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)
+        additional_negative_samples = os.path.join("data", "personachat", "generated_responses", "personachat_train_responses.txt")
+        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true, additional_negative_samples)

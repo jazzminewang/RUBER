@@ -205,7 +205,6 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
         file path to file with all queries
         file path to file with all replies
     """
-    
     fquery_filename = os.path.join(processed_data_dir, "queries.txt")
     freply_filename = os.path.join(processed_data_dir, "replies.txt")
     fquery_file = Path(fquery_filename)
@@ -299,9 +298,9 @@ if __name__ == '__main__':
         processed_validation_dir = "./data/personachat/validation"
         print("Parsing personachat training data")
         fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
+        fgenerated_train = os.path.join("generated_responses", "personachat_train_responses.txt")
         print("Parsing personachat validation data")
         fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
-
 
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
@@ -311,17 +310,24 @@ if __name__ == '__main__':
     raw_data_dir = "./data"
     process_train_file(processed_train_dir, fquery_train, query_max_length)
     process_train_file(processed_train_dir, freply_train, reply_max_length)
+    
 
     fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
     frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
 
     word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
+
     make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
 
-    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
     make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
 
-    print("Validation")
+    if fgenerated_train:
+        print("Processing generated reply files")
+        process_train_file(processed_train_dir, fgenerated_train, reply_max_length)
+        fgvocab = '%s.vocab%d'%(fgenerated_train, reply_max_length)
+        make_embedding_matrix(processed_train_dir, fgenerated_train, word2vec, vec_dim, fqvocab)
+
+    print("Validation data")
     process_train_file(processed_validation_dir, fquery_validate, query_max_length)
     process_train_file(processed_validation_dir, freply_validate, reply_max_length)
 

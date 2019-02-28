@@ -43,9 +43,9 @@ class Unreferenced():
 	print("Log dir is ")
 	print(log_dir)
         if batch_norm: 
-            self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm")
+            self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_sampling")
         else:
-            self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin))
+            self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_sampling")
 
         self.qmax_length = qmax_length
         self.rmax_length = rmax_length
@@ -214,7 +214,6 @@ class Unreferenced():
             self.reply_inputs: reply_batch,
             self.training : training}
 
-
     def get_validation_loss(self, queries, replies, data_size, batch_size):
         # data_size = # of queries
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
@@ -232,13 +231,21 @@ class Unreferenced():
 
         return step, loss
 
-    def train_step(self, queries, replies, data_size, batch_size):
+    def train_step(self, queries, replies, data_size, batch_size, generated_responses):
+
         # data_size = # of queries
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
         negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
-                data_size, batch_size)
+                data_size, batch_size / 2)
+
+        # Add noisy responses from HRED models
+        generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
+                data_size, batch_size / 2)
+        negative_reply_batch += generated_reply_batch
+        neg_reply_sizes += generated_reply_sizes
+
         # compute sample loss and do optimize
         feed_dict = self.make_input_feed(query_batch, query_sizes,
                 reply_batch, reply_sizes, negative_reply_batch, neg_reply_sizes)
@@ -268,13 +275,15 @@ class Unreferenced():
             self.session.run(tf.global_variables_initializer())
 
     def train(self, data_dir, fquery, freply, validation_fquery, validation_freply_true,
-            batch_size=128, steps_per_checkpoint=100):
+            batch_size=128, steps_per_checkpoint=100, additional_negative_samples):
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
 	data_size = len(queries)
 	validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)
 	print("Writing validation + loss to " + self.train_dir)
+        negative_samples = data_helpers.load_data(data_dir, additional_negative_samples, self.rmax_length)
+
         with self.session.as_default():
             self.init_model()
 
@@ -290,7 +299,7 @@ class Unreferenced():
             prev_losses = [1.0]
 	    impatience = 0.0
             while True: 
-                step, l = self.train_step(queries, replies, data_size, batch_size)
+                step, l = self.train_step(queries, replies, data_size, batch_size, negative_samples)
                 _, validation_l = self.get_validation_loss(validation_queries, validation_replies, len(validation_queries), batch_size)
 
                 loss += l
