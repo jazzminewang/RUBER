@@ -63,8 +63,16 @@ class Hybrid():
         scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores \
                 = self.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, \
                     '%s.vocab%d'%(training_fquery, qmax_length),'%s.vocab%d'%(training_freply, rmax_length), checkpoint_dir)
-
-        csv_title = os.path.join('./results', checkpoint_dir, validation_freply_generated + str(int(time.time())) + ".csv")
+	csv_dir = os.path.join('./results', "ADEM", "validation", checkpoint_dir)
+	print(csv_dir)
+	reply_file_path = validation_freply_generated.split("/")
+	reply_file = reply_file_path[len(reply_file_path) - 1]
+	print(reply_file)
+        csv_title = os.path.join(reply_file + str(int(time.time())) + ".csv")
+	print("Csv title: ")
+	print(csv_title)
+	if not os.path.exists(csv_dir):
+	    os.makedirs(csv_dir)
         
         """write results to CSV"""
         with open(csv_title, 'w+') as csvfile:
@@ -128,11 +136,14 @@ if __name__ == '__main__':
     train_dataset = args.train_dataset #personachat or twitter
     validation_dataset = args.validation_dataset #ADEM, personachat
     mode = args.mode # train or validate
+    
     if args.reply_files and args.checkpoint_dirs:
-        checkpoint_dirs = args.checkpoint_dirs
-        reply_files = args.reply_files
+        checkpoint_dirs = args.checkpoint_dirs[0].split(" ")
+        reply_files = args.reply_files[0].split(" ")
         print("Checkpoint dirs: ")
         print(checkpoint_dirs)
+	print("Example checkpoint dir: ")
+	print(checkpoint_dirs[0])
         print("Reply files: ")
 	print(reply_files)
 
