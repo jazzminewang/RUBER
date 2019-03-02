@@ -24,7 +24,7 @@ class Unreferenced():
             init_learning_rate=0.001,
             l2_regular=0.1,
             margin=0.5, 
-            train_dir='train_data_batch_norm_128',
+            train_dir='train_data_new_hyper_other_defaults_twitter',
             is_training=True
             ):
         """
@@ -132,14 +132,14 @@ class Unreferenced():
 			#     inputs,
 			#     center=True, scale=True,
 			#     is_training=is_training)
-            #     self.test = inputs
-            #     # dropout layer
-            #     self.training = tf.placeholder(tf.bool, name='training')
-            #     inputs_dropout = tf.layers.dropout(inputs, training=self.training)
-            #     # output layer
-            #     self.score = tf.contrib.layers.legacy_fully_connected(
-            #         inputs_dropout, 1, activation_fn=tf.sigmoid,
-            #         weight_regularizer=tf.contrib.layers.l2_regularizer(l2_regular))
+                self.test = inputs
+                # dropout layer
+                self.training = tf.placeholder(tf.bool, name='training')
+                inputs_dropout = tf.layers.dropout(inputs, training=self.training)
+                # output layer
+                self.score = tf.contrib.layers.legacy_fully_connected(
+                    inputs_dropout, 1, activation_fn=tf.sigmoid,
+                    weight_regularizer=tf.contrib.layers.l2_regularizer(l2_regular))
 		self.score = tf.reshape(self.score, [-1]) # [batch_size]
 
 	with tf.variable_scope('train'):
