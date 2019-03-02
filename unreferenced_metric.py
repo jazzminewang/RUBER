@@ -9,6 +9,7 @@ import tensorflow as tf
 import data_helpers
 import pdb
 from InferSent.models import InferSent
+import torch
 
 class Unreferenced():
     """Unreferenced Metric
@@ -25,7 +26,7 @@ class Unreferenced():
             init_learning_rate=1e-4,
             l2_regular=0.1,
             margin=0.5,
-            train_dir='infersent/',
+            train_dir='infersent_personachat/',
             is_training=True
             ):
         """
@@ -57,14 +58,14 @@ class Unreferenced():
         # initialize InferSent variables
         print("Initializing InferSent variables")
         V = 2
-        MODEL_PATH = 'encoder/infersent%s.pkl' % V
+        MODEL_PATH = 'InferSent/encoder/infersent%s.pkl' % V
         params_model = {'bsize': 64, 'word_emb_dim': 300, 'enc_lstm_dim': 2048,
                         'pool_type': 'max', 'dpout_model': 0.0, 'version': V}
         infersent = InferSent(params_model)
         infersent.load_state_dict(torch.load(MODEL_PATH))
         W2V_PATH = 'fastText/crawl-300d-2M.vec'
         infersent.set_w2v_path(W2V_PATH)
-        infersent.build_vocab(sentences, tokenize=True)
+        infersent.build_vocab_k_words(K=100000)
 
         print("Finished initializing unreferenced metric")
 
