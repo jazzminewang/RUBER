@@ -24,8 +24,10 @@ class Unreferenced():
             init_learning_rate=0.001,
             l2_regular=0.1,
             margin=0.5, 
-            train_dir='train_data_batch_norm_128',
-            is_training=True
+            train_dir='train_data/',
+            is_training=True,
+            batch_norm=False, 
+            train_dataset='',
             ):
         """
         Initialize related variables and construct the neural network graph.
@@ -40,7 +42,11 @@ class Unreferenced():
         """
 
         # initialize varialbes
-        self.train_dir = train_dir
+        if batch_norm: 
+            self.train_dir = train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm"
+        else:
+            self.train_dir = train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)
+
         self.qmax_length = qmax_length
         self.rmax_length = rmax_length
         random.seed()
@@ -128,6 +134,7 @@ class Unreferenced():
                             activation_fn=tf.tanh,
                             weight_regularizer=tf.contrib.layers. \
                                     l2_regularizer(l2_regular))
+        if batch_norm: 
 			inputs = tf.contrib.layers.batch_norm(
 			    inputs,
 			    center=True, scale=True,

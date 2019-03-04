@@ -19,7 +19,8 @@ class Hybrid():
             qmax_length=20,
             rmax_length=30,
             ref_method='max_min',
-            gru_units=512, mlp_units=[256, 512, 128],
+            # gru_units=512, 
+            mlp_units=[256, 512, 128],
             is_training=True
         ):
         print("Initializing referenced model")
@@ -31,9 +32,12 @@ class Hybrid():
                 gru_units, mlp_units,
                 is_training=is_training)
 
-    def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true):
+        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true, gru_num_units, init_learning_rate, margin, batch_norm)
+
+    def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true, gru_num_units, init_learning_rate, margin, batch_norm, train_dataset):
         print("training unreferenced metric")
-        self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true)
+        self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true, gru_num_units, init_learning_rate=init_learning_rate, margin=margin, batch_norm=batch_norm, train_dataset=train_dataset)
+
     def normalize(self, scores, smin=None, smax=None, coefficient=None, smallest_value=0):
         if not smin and not smax:
 	    smin = min(scores)
@@ -123,11 +127,19 @@ if __name__ == '__main__':
     parser.add_argument('mode')
     parser.add_argument('-reply_files', nargs='+')
     parser.add_argument('-checkpoint_dirs', nargs='+')
+
+    # Hyperparameters
+    parser.add_argument('-gru_num_units', type=int)
+    parser.add_argument('-init_learning_rate', type=float)
+    parser.add_argument('-margin', type=float)
+    parser.add_argument('-batch_norm', type=float, default=False)
+
     args = parser.parse_args()
 
     train_dataset = args.train_dataset #personachat or twitter
     validation_dataset = args.validation_dataset #ADEM, personachat
     mode = args.mode # train or validate
+
     if args.reply_files and args.checkpoint_dirs:
         checkpoint_dirs = args.checkpoint_dirs
         reply_files = args.reply_files
@@ -181,4 +193,9 @@ if __name__ == '__main__':
         """train"""
         print("Training")
 	print("Data dir is " + data_dir)
-        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)
+        batch_norm = args.batch_norm
+        gru_num_units = args.gru_num_units
+        init_learning_rate = args.init_learning_rate
+        margin = args.margin
+
+        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true, gru_num_units, init_learning_rate, margin, batch_norm, train_dataset)
