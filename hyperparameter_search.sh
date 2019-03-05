@@ -6,14 +6,16 @@ declare -a margins=(0.1 0.25 0.5 0.75)
 
 # stuff
 echo before for lop
-for gru_num_unit in "${gru_num_units[@]}"
+for gru_num_unit in ${gru_num_units[@]}
 do
-    for init_learning_rate in "${init_learning_rate[@]}"
+    for init_learning_rate in ${init_learning_rate[@]}
     do
-        for margin in "${margins[@]}"
+        for margin in ${margins[@]}
         do
-	    margin=$(($margin * 100))
-	    init_learning_rate=$(($init_learning_rate * 1000))
+	    margin<<<$(margin * 100)
+	    init_learning_rate<<<$init_learning_rate*1000
+	    echo margin
+	    echo init_learning_rate		
             tmux new-session -d -s "personachat_gru_${gru_num_unit}_learning_${init_learning_rate}_margin_${margin}_batchnorm" \
                 "python hybrid_evaluation.py personachat personachat train -gru_num_units=${gru_num_unit} -init_learning_rate=${init_learning_rate} -margin=${margin} -batchnorm=true"
 
