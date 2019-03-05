@@ -132,7 +132,7 @@ if __name__ == '__main__':
     parser.add_argument('-gru_num_units', type=int)
     parser.add_argument('-init_learning_rate', type=float)
     parser.add_argument('-margin', type=float)
-    parser.add_argument('-batch_norm', type=float, default=False)
+    parser.add_argument('-batch_norm', type=bool, default=False)
 
     args = parser.parse_args()
 
