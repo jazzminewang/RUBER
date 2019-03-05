@@ -193,9 +193,9 @@ if __name__ == '__main__':
         """train"""
         print("Training")
 	print("Data dir is " + data_dir)
-        batch_norm = args.batch_norm
+        batch_norm = args.batch_norm 
         gru_num_units = args.gru_num_units
-        init_learning_rate = args.init_learning_rate
-        margin = args.margin
+        init_learning_rate = float(args.init_learning_rate) / 1000
+        margin = float(args.margin) / 100
 
         hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true, gru_num_units, init_learning_rate, margin, batch_norm, train_dataset)
