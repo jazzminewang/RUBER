@@ -240,7 +240,7 @@ class Unreferenced():
         negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size / 2)
 
-        # Add noisy responses from HRED models
+        # Add noisy responses from HRED models for half of the dataset
         generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size / 2)
         negative_reply_batch += generated_reply_batch

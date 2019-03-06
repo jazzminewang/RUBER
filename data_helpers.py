@@ -275,21 +275,62 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
                 replies.close()
     return fquery_short, freply_short
 
+def randomize(lines, proportion):
+    for line in lines:
+        rand_line = lines[random.randint(0, len(lines)].split()
+        rand_word = rand_line[random.randint(0, len(rand_word))]
+        for word in line:
+            if random.randint(0, 10) == 0:
+                word = rand_word
+    return lines
+    
+
+def scramble(raw_data_dir, processed_data_dir):
+    fquery_filename = os.path.join(processed_data_dir, "queries.txt")
+    freply_filename = os.path.join(processed_data_dir, "replies.txt")
+    fquery_file = Path(fquery_filename)
+    freply_file = Path(freply_filename)
+    fquery_short = "queries.txt" 
+    freply_short = "replies.txt"
+
+    with open(fquery_filename, "r") as fquery, \
+        with open(freply_filename, "r") as freply:
+            fquery_lines = fquery.readlines()
+            freply_lines = freply.readlines()
+
+    new_fquery = randomize(fquery_lines, 10)
+    new_freply = randomize(freply_lines, 10)
+
+    with open(fquery_filename, "w") as fquery, \
+        with open(freply_filename, "w") as freply:
+            for line in new_fquery:
+                fquery.write(line)
+            for line in new_freply:
+                freply.write(line)
+
+    print("Finished scrambling text - example sentence changes")
+    print(fquery_lines[:5])
+    print(new_fquery[:5])
+
+    return fquery_short, freply_short
+    
 if __name__ == '__main__':
     # Argument is dataset. Twitter or Personachat 
     query_max_length, reply_max_length = [20, 30]
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-dataset', help="Either Personachat or Twitter")
-
+    parse.add_argument('-scramble', bool=True, help="If true, 1/10 of the words will be randomly switched")
 
     args = parser.parse_args()
     if args.dataset=="twitter":
 	    raw_data_dir = "./data/twitter"
             processed_train_dir = "./data/twitter/train/"
             processed_validation_dir = "./data/twitter/validation"
+
             print("Parsing twitter training data")
             fquery_train, freply_train = parse_twitter_dataset(raw_data_dir, processed_train_dir)
+
             print("Parsing twitter validation data")
             fquery_validate, freply_validate = parse_twitter_dataset(raw_data_dir, processed_validation_dir, filename="valid.txt")
     else:
@@ -299,8 +340,13 @@ if __name__ == '__main__':
         print("Parsing personachat training data")
         fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
         fgenerated_train = os.path.join("generated_responses", "personachat_train_responses.txt")
+
         print("Parsing personachat validation data")
         fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
+    
+    if args.scramble:
+        print("Scrambling dataset")
+        fquery_train, freply_train = scramble(raw_data_dir, processed_train_dir)
 
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
