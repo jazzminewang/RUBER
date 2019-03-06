@@ -24,7 +24,7 @@ class Unreferenced():
             init_learning_rate=0.001,
             l2_regular=0.1,
             margin=0.5, 
-            train_dir='train_data_batch_norm_128',
+            train_dir='train_data_new_hyper_other_defaults_twitter',
             is_training=True
             ):
         """
@@ -128,6 +128,7 @@ class Unreferenced():
                             activation_fn=tf.tanh,
                             weight_regularizer=tf.contrib.layers. \
                                     l2_regularizer(l2_regular))
+
 		"""
 			inputs = tf.contrib.layers.batch_norm(
 			    inputs,
