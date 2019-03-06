@@ -59,16 +59,18 @@ class Hybrid():
 
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
 
-    def validate_to_csv(self, checkpoint_dir, data_dir, validation_fquery, validation_freply_generated, validation_freply_true, training_fquery, qmax_length, training_freply, rmax_length):
+    def validate_to_csv(self, checkpoint_dir, data_dir, validation_fquery, validation_freply_generated, validation_freply_true, training_fquery, qmax_length, training_freply, rmax_length, validation_dataset):
         scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores \
                 = self.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, \
                     '%s.vocab%d'%(training_fquery, qmax_length),'%s.vocab%d'%(training_freply, rmax_length), checkpoint_dir)
-	csv_dir = os.path.join('./results', "ADEM", "validation", checkpoint_dir)
+	
+        csv_dir = os.path.join('./results', validation_dataset, "validation", checkpoint_dir)
+
 	print(csv_dir)
 	reply_file_path = validation_freply_generated.split("/")
 	reply_file = reply_file_path[len(reply_file_path) - 1]
 	print(reply_file)
-        csv_title = os.path.join(csv_dir, reply_file + str(int(time.time())) + ".csv")
+        csv_title = os.path.join(csv_dir, reply_file.rstrip(".txt") + ".csv")
 	print("Csv title: ")
 	print(csv_title)
 	if not os.path.exists(csv_dir):
@@ -153,17 +155,22 @@ if __name__ == '__main__':
 
     training_fquery = train_dataset + "/train/queries.txt"
     training_freply = train_dataset + "/train/replies.txt"
-    validation_fquery = validation_dataset + "/validation/queries.txt"
+    
     if args.validation_dataset =="ADEM":
+        validation_fquery = validation_dataset + "/validation/queries.txt"
         validation_freply_true = validation_dataset + "/validation/true.txt"
         if reply_files:
              validation_freply_generated = validation_dataset + "/validation/" + reply_files[0]
         else:
              validation_freply_generated = validation_dataset + "/validation/hred_replies.txt"
     else:
-        #personachat
-        validation_freply_true = validation_dataset + "/validation/replies.txt.true.sub"
-        validation_freply_generated = validation_dataset + "/validation/replies.txt.sub"
+        #personachat validation on test set
+        validation_fquery = validation_dataset + "/test/queries.txt"
+        validation_freply_true = validation_dataset + "/test/ground_truth.txt"
+        if reply_files:
+             validation_freply_generated = validation_dataset + "/test/" + reply_files[0]
+        else:
+             validation_freply_generated = validation_dataset + "/test/high_quality_responses.txt"
 
     if args.mode == "train":
         is_training=True
@@ -187,7 +194,7 @@ if __name__ == '__main__':
                 hybrid.validate_to_csv(
                     checkpoint_dir, data_dir, validation_fquery, \
                         validation_freply_generated, validation_freply_true, \
-                            training_fquery, qmax_length, training_freply, rmax_length)
+                            training_fquery, qmax_length, training_freply, rmax_length, validation_dataset)
 
     else:
         """train"""
