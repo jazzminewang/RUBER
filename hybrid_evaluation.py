@@ -19,7 +19,7 @@ class Hybrid():
             qmax_length=20,
             rmax_length=30,
             ref_method='max_min',
-            gru_units=128, mlp_units=[256, 512, 128],
+            gru_units=512, mlp_units=[256, 512, 128],
             is_training=True
         ):
         print("Initializing referenced model")
