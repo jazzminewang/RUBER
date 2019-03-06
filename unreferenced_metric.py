@@ -142,6 +142,7 @@ class Unreferenced():
                 self.score = tf.contrib.layers.legacy_fully_connected(
                     inputs_dropout, 1, activation_fn=tf.sigmoid,
                     weight_regularizer=tf.contrib.layers.l2_regularizer(l2_regular))
+
 		self.score = tf.reshape(self.score, [-1]) # [batch_size]
 
 	with tf.variable_scope('train'):
