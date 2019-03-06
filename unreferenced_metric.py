@@ -128,11 +128,14 @@ class Unreferenced():
                             activation_fn=tf.tanh,
                             weight_regularizer=tf.contrib.layers. \
                                     l2_regularizer(l2_regular))
-			# inputs = tf.contrib.layers.batch_norm(
-			#     inputs,
-			#     center=True, scale=True,
-			#     is_training=is_training)
-                self.test = inputs
+
+		"""
+			inputs = tf.contrib.layers.batch_norm(
+			    inputs,
+			    center=True, scale=True,
+			    is_training=is_training)
+                """
+		self.test = inputs
                 # dropout layer
                 self.training = tf.placeholder(tf.bool, name='training')
                 inputs_dropout = tf.layers.dropout(inputs, training=self.training)
@@ -140,6 +143,7 @@ class Unreferenced():
                 self.score = tf.contrib.layers.legacy_fully_connected(
                     inputs_dropout, 1, activation_fn=tf.sigmoid,
                     weight_regularizer=tf.contrib.layers.l2_regularizer(l2_regular))
+
 		self.score = tf.reshape(self.score, [-1]) # [batch_size]
 
 	with tf.variable_scope('train'):
