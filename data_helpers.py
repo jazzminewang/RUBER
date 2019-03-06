@@ -7,6 +7,7 @@ from tensorflow.contrib import learn
 from pathlib import Path
 import time
 import argparse
+import random
 
 def tokenizer(iterator):
     for value in iterator:
@@ -265,7 +266,7 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
                             else:
                                 queries.write(split[0]+ get_most_recent_context(context))
                                 replies.write(split[0])
-                                context.append(split[1])
+                                context.append(split[0])
                     
                     replies.write(filtered_lines[len(filtered_lines) - 1])
                 datafile.close()
@@ -276,13 +277,23 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
     return fquery_short, freply_short
 
 def randomize(lines, proportion):
-    for line in lines:
-        rand_line = lines[random.randint(0, len(lines)].split()
-        rand_word = rand_line[random.randint(0, len(rand_word))]
-        for word in line:
-            if random.randint(0, 10) == 0:
+    new_lines = []
+    for i, line in enumerate(lines):
+	new_line = []
+        for word in line.split():
+            if random.randint(0, proportion) == 1:
+
+                rand_line = lines[random.randint(0, len(lines))-1].split()
+                rand_word = rand_line[random.randint(0, len(rand_line)-1)]
                 word = rand_word
-    return lines
+		
+
+	    new_line.append(word)
+        string_line =" ".join(str(x) for x in new_line)
+        new_lines.append(string_line) 
+        if i % 50 == 1:
+	   print("example scrambled line: " + string_line)
+    return new_lines
     
 
 def scramble(raw_data_dir, processed_data_dir):
@@ -294,15 +305,16 @@ def scramble(raw_data_dir, processed_data_dir):
     freply_short = "replies.txt"
 
     with open(fquery_filename, "r") as fquery, \
-        with open(freply_filename, "r") as freply:
+        open(freply_filename, "r") as freply:
             fquery_lines = fquery.readlines()
             freply_lines = freply.readlines()
-
+    print("Randomizing query file")
     new_fquery = randomize(fquery_lines, 10)
+    print("Randomizing reply file")
     new_freply = randomize(freply_lines, 10)
 
     with open(fquery_filename, "w") as fquery, \
-        with open(freply_filename, "w") as freply:
+        open(freply_filename, "w") as freply:
             for line in new_fquery:
                 fquery.write(line)
             for line in new_freply:
@@ -320,9 +332,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-dataset', help="Either Personachat or Twitter")
-    parse.add_argument('-scramble', bool=True, help="If true, 1/10 of the words will be randomly switched")
+    parser.add_argument('-scramble', action='store_true', help="If true, 1/10 of the words will be randomly switched")
 
     args = parser.parse_args()
+    print(args.scramble)
     if args.dataset=="twitter":
 	    raw_data_dir = "./data/twitter"
             processed_train_dir = "./data/twitter/train/"
