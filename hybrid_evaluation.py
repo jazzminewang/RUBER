@@ -19,9 +19,13 @@ class Hybrid():
             qmax_length=20,
             rmax_length=30,
             ref_method='max_min',
-            # gru_units=512, 
+            gru_num_units=512, 
             mlp_units=[256, 512, 128],
-            is_training=True
+            init_learning_rate=0.001,
+            margin=0.5, 
+            batch_norm=False,
+            is_training=True,
+            train_dataset='',
         ):
         print("Initializing referenced model")
         self.ref=Referenced(data_dir, frword2vec, ref_method)
@@ -29,14 +33,20 @@ class Hybrid():
         self.unref=Unreferenced(qmax_length, rmax_length,
                 os.path.join(data_dir,fqembed),
                 os.path.join(data_dir,frembed),
-                gru_units, mlp_units,
-                is_training=is_training)
+                gru_num_units=gru_num_units, 
+                mlp_units,
+                init_learning_rate=init_learning_rate,
+                margin=margin,
+                is_training=is_training,
+                batch_norm=batch_norm,
+                train_dataset=train_dataset
+                )
 
-        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true, gru_num_units, init_learning_rate, margin, batch_norm)
+        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)
 
-    def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true, gru_num_units, init_learning_rate, margin, batch_norm, train_dataset):
+    def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true):
         print("training unreferenced metric")
-        self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true, gru_num_units, init_learning_rate=init_learning_rate, margin=margin, batch_norm=batch_norm, train_dataset=train_dataset)
+        self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true)
 
     def normalize(self, scores, smin=None, smax=None, coefficient=None, smallest_value=0):
         if not smin and not smax:
@@ -125,8 +135,9 @@ if __name__ == '__main__':
     parser.add_argument('train_dataset')
     parser.add_argument('validation_dataset')
     parser.add_argument('mode')
+
     parser.add_argument('-reply_files', nargs='+')
-    parser.add_argument('-checkpoint_dirs', nargs='+')
+    parser.add_argument('-evaluation_checkpoint_dirs', nargs='+')
 
     # Hyperparameters
     parser.add_argument('-gru_num_units', type=int)
@@ -139,6 +150,12 @@ if __name__ == '__main__':
     train_dataset = args.train_dataset #personachat or twitter
     validation_dataset = args.validation_dataset #ADEM, personachat
     mode = args.mode # train or validate
+    training_checkpoint_dir = args.training_checkpoint_dir
+
+    batch_norm = args.batch_norm 
+    gru_num_units = args.gru_num_units
+    init_learning_rate = float(args.init_learning_rate) / 1000
+    margin = float(args.margin) / 100
 
     if args.reply_files and args.checkpoint_dirs:
         checkpoint_dirs = args.checkpoint_dirs
@@ -175,7 +192,20 @@ if __name__ == '__main__':
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
     print("Initializing Hybrid object with " + training_fquery + " as training query file")
-    hybrid = Hybrid(data_dir, frword2vec, '%s.embed'%training_fquery, '%s.embed'%training_freply, is_training=is_training)
+    hybrid = Hybrid(
+        data_dir, 
+        frword2vec, 
+        '%s.embed'%training_fquery, 
+        '%s.embed'%training_freply, 
+        gru_num_units=gru_num_units,
+        init_learning_rate=init_learning_rate,
+        margin=margin,
+        batch_norm=batch_norm,
+        is_training=is_training, 
+        train_dataset=train_dataset
+        )
+    
+    
     """test"""
     if args.mode == "validate":
 	print("First checkpoint dir " + checkpoint_dirs[0])
@@ -193,9 +223,4 @@ if __name__ == '__main__':
         """train"""
         print("Training")
 	print("Data dir is " + data_dir)
-        batch_norm = args.batch_norm 
-        gru_num_units = args.gru_num_units
-        init_learning_rate = float(args.init_learning_rate) / 1000
-        margin = float(args.margin) / 100
-
-        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true, gru_num_units, init_learning_rate, margin, batch_norm, train_dataset)
+        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)
