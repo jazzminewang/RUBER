@@ -174,7 +174,7 @@ class Unreferenced():
                 # checkpoint saver
                 self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
                 # write summary
-                self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),self.session.graph)
+                self.log_writer=tf.summary.FileWriter(os.path.join(self.train_dir, 'logs/'),self.session.graph)
                 self.summary = tf.Summary()
 
 
