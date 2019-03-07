@@ -272,15 +272,15 @@ class Unreferenced():
 	data_size = len(queries)
 	validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)
-	print("Writing validation + loss to " + data_dir)
+	print("Writing validation + loss to " + self.train_dir)
         with self.session.as_default():
             self.init_model()
 
             checkpoint_path = os.path.join(self.train_dir, "unref.model")
             loss = 0.0
 	    validation_loss = 0.0
-	    if os.path.isfile(data_dir + "best_checkpoint.txt"):
-       	        with open(data_dir + "best_checkpoint.txt", "r") as best_file:
+	    if os.path.isfile(self.train_dir + "best_checkpoint.txt"):
+       	        with open(self.train_dir + "best_checkpoint.txt", "r") as best_file:
 		    best_validation_loss = float(best_file.readlines()[1])
 		    
 	    else:
