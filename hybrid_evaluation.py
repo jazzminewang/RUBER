@@ -34,7 +34,7 @@ class Hybrid():
                 os.path.join(data_dir,fqembed),
                 os.path.join(data_dir,frembed),
                 gru_num_units=gru_num_units, 
-                mlp_units,
+                mlp_units=mlp_units,
                 init_learning_rate=init_learning_rate,
                 margin=margin,
                 is_training=is_training,
@@ -150,7 +150,6 @@ if __name__ == '__main__':
     train_dataset = args.train_dataset #personachat or twitter
     validation_dataset = args.validation_dataset #ADEM, personachat
     mode = args.mode # train or validate
-    training_checkpoint_dir = args.training_checkpoint_dir
 
     batch_norm = args.batch_norm 
     gru_num_units = args.gru_num_units
