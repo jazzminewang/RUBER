@@ -27,6 +27,7 @@ class Unreferenced():
             is_training=True,
             batch_norm=False, 
             train_dataset='',
+	    log_dir="training",
             ):
         """
         Initialize related variables and construct the neural network graph.
@@ -39,12 +40,13 @@ class Unreferenced():
                 indicating the output units for each perceptron layer.
                 No need to specify the output layer size 1.
         """
-
         # initialize varialbes
+	print("Log dir is ")
+	print(log_dir)
         if batch_norm: 
-            self.train_dir = train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm"
+            self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm")
         else:
-            self.train_dir = train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)
+            self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin))
 
         self.qmax_length = qmax_length
         self.rmax_length = rmax_length

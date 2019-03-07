@@ -26,10 +26,11 @@ class Hybrid():
             batch_norm=False,
             is_training=True,
             train_dataset='',
+	    log_dir="training",
         ):
         print("Initializing referenced model")
         self.ref=Referenced(data_dir, frword2vec, ref_method)
-        print("Initializing unreferenced model")
+        print("Initializing unreferenced model with log_dir " + log_dir + " and ref method " + ref_method)
         self.unref=Unreferenced(qmax_length, rmax_length,
                 os.path.join(data_dir,fqembed),
                 os.path.join(data_dir,frembed),
@@ -39,7 +40,8 @@ class Hybrid():
                 margin=margin,
                 is_training=is_training,
                 batch_norm=batch_norm,
-                train_dataset=train_dataset
+                train_dataset=train_dataset,
+		log_dir=log_dir
                 )
 
     def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true):
@@ -134,8 +136,13 @@ if __name__ == '__main__':
     parser.add_argument('validation_dataset')
     parser.add_argument('mode')
 
+
+    # Evaluation
     parser.add_argument('-reply_files', nargs='+')
     parser.add_argument('-evaluation_checkpoint_dirs', nargs='+')
+
+    # Training
+    parser.add_argument('-log_dir')
 
     # Hyperparameters
     parser.add_argument('-gru_num_units', type=int)
@@ -148,6 +155,8 @@ if __name__ == '__main__':
     train_dataset = args.train_dataset #personachat or twitter
     validation_dataset = args.validation_dataset #ADEM, personachat
     mode = args.mode # train or validate
+
+    log_dir = args.log_dir
 
     batch_norm = args.batch_norm 
     gru_num_units = args.gru_num_units
@@ -199,7 +208,8 @@ if __name__ == '__main__':
         margin=margin,
         batch_norm=batch_norm,
         is_training=is_training, 
-        train_dataset=train_dataset
+        train_dataset=train_dataset,
+	log_dir=log_dir
         )
     
     
