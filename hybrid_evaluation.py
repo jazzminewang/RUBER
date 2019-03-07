@@ -19,7 +19,7 @@ class Hybrid():
             qmax_length=20,
             rmax_length=30,
             ref_method='max_min',
-            gru_units=128, mlp_units=[256, 512, 128],
+            gru_units=512, mlp_units=[256, 512, 128],
             is_training=True
         ):
         print("Initializing referenced model")
@@ -60,6 +60,7 @@ class Hybrid():
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
 
     def validate_to_csv(self, checkpoint_dir, data_dir, validation_fquery, validation_freply_generated, validation_freply_true, training_fquery, qmax_length, training_freply, rmax_length, validation_dataset):
+	print("Starting validation")
         scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores \
                 = self.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, \
                     '%s.vocab%d'%(training_fquery, qmax_length),'%s.vocab%d'%(training_freply, rmax_length), checkpoint_dir)
@@ -169,8 +170,6 @@ if __name__ == '__main__':
         validation_freply_true = validation_dataset + "/test/ground_truth.txt"
         if reply_files:
              validation_freply_generated = validation_dataset + "/test/" + reply_files[0]
-        else:
-             validation_freply_generated = validation_dataset + "/test/high_quality_responses.txt"
 
     if args.mode == "train":
         is_training=True
@@ -189,8 +188,10 @@ if __name__ == '__main__':
         for checkpoint_dir in checkpoint_dirs:
 	    for reply_file in reply_files: 
                 print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
-                validation_freply_generated = os.path.join(validation_dataset, "validation", reply_file)
-
+		if validation_dataset == "ADEM":
+                    validation_freply_generated = os.path.join(validation_dataset, "validation", reply_file)
+                else:
+		    validation_freply_generated = os.path.join(validation_dataset, "test", reply_file)
                 hybrid.validate_to_csv(
                     checkpoint_dir, data_dir, validation_fquery, \
                         validation_freply_generated, validation_freply_true, \
