@@ -42,8 +42,6 @@ class Hybrid():
                 train_dataset=train_dataset
                 )
 
-        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)
-
     def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true):
         print("training unreferenced metric")
         self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true)
