@@ -324,7 +324,6 @@ class Unreferenced():
                     loss = 0.0
 		    validation_loss = 0.0
                     self.log_writer.add_summary(self.summary, step)
-                    self.saver.save(self.session, checkpoint_path,
                             global_step=self.global_step)
 
 #                    """ Debug
