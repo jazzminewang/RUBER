@@ -47,14 +47,14 @@ class Unreferenced():
 	print(log_dir)
         if batch_norm:
             if scramble:
-                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_sampling_scramble")
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_sampling_scramble_" + additional_negative_samples)
             else:  
-                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_sampling")
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_sampling" + additional_negative_samples)
         else:
 	    if scramble:
-	        self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_sampling_scramble")
+	        self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_sampling_scramble"  + additional_negative_samples)
             else:
-                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_sampling")
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_sampling"  + additional_negative_samples)
 
         self.qmax_length = qmax_length
         self.rmax_length = rmax_length
@@ -249,9 +249,11 @@ class Unreferenced():
 
 
         if not generated_responses:
+	    print("not getting generated responses")
             negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size)
         else:
+            print("getting generated responses")
             negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size / 2)
             # Add noisy responses from HRED models for half of the dataset

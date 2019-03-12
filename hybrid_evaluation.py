@@ -161,7 +161,7 @@ if __name__ == '__main__':
     parser.add_argument('-margin', type=float)
     parser.add_argument('-batch_norm', type=bool, default=False)
     parser.add_argument('-scramble', type=bool, default=False)
-    parser.add_argument('-additional_negative_sampling', type=bool, default=False)
+    parser.add_argument('-additional_negative_samples', type=bool, default=False)
 
     args = parser.parse_args()
 
