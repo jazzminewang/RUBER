@@ -324,7 +324,6 @@ class Unreferenced():
                     loss = 0.0
 		    validation_loss = 0.0
                     self.log_writer.add_summary(self.summary, step)
-                            global_step=self.global_step)
 
 #                    """ Debug
                     query_batch, query_sizes, idx = self.get_batch(queries, data_size, 10)

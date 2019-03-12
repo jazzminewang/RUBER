@@ -17,17 +17,17 @@ if __name__ == '__main__':
 
     # Create reply.txt.true.sub
     copyfile(freply, freply + ".true.sub")
-    true_reply = freply + ".true.sub"
+    true_reply = freply_train + ".true.sub"
 
     # Create reply.txt.sub
     reply_true = open(freply).readlines()
     random.shuffle(reply_true)
     open(freply + ".sub", "w+").writelines(reply_true)
-    sub_reply = freply + ".sub"
+    sub_reply = freply_train + ".sub"
 
     # Create query.txt.sub
     copyfile(fquery, fquery + ".sub")
-    sub_query = fquery + ".sub"
+    sub_query = fquery_train + ".sub"
 
     query_max_length, reply_max_length = [20, 30]
     # Path to word2vec weights
