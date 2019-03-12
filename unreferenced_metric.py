@@ -27,7 +27,7 @@ class Unreferenced():
             is_training=True,
             batch_norm=False, 
             train_dataset='',
-	        log_dir="tmp/",
+		log_dir="tmp/",
             scramble=False,
             additional_negative_samples='',
             ):
@@ -47,15 +47,15 @@ class Unreferenced():
 	print(log_dir)
         if batch_norm:
             if scramble:
-                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_sampling_scramble_" + additional_negative_samples)
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_scramble" + additional_negative_samples.split("/")[0])
             else:  
-                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_sampling" + additional_negative_samples)
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + additional_negative_samples.split("/")[0])
         else:
 	    if scramble:
-	        self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_sampling_scramble"  + additional_negative_samples)
+		self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_scramble"  + additional_negative_samples.split("/")[0])
             else:
-                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_sampling"  + additional_negative_samples)
-
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + additional_negative_samples.split("/")[0])
+        self.additional_negative_samples = additional_negative_samples
         self.qmax_length = qmax_length
         self.rmax_length = rmax_length
         random.seed()
@@ -144,10 +144,10 @@ class Unreferenced():
                             weight_regularizer=tf.contrib.layers. \
                                     l2_regularizer(l2_regular))
                         if batch_norm: 
-		        	inputs = tf.contrib.layers.batch_norm(
-			                 inputs,
-			                 center=True, scale=True,
-			                 is_training=is_training)
+				inputs = tf.contrib.layers.batch_norm(
+					 inputs,
+					 center=True, scale=True,
+					 is_training=is_training)
                 self.test = inputs
                 # dropout layer
                 self.training = tf.placeholder(tf.bool, name='training')
@@ -160,30 +160,30 @@ class Unreferenced():
 		self.score = tf.reshape(self.score, [-1]) # [batch_size]
 
 	with tf.variable_scope('train'):
-        	if not is_training:
+		if not is_training:
 		    self.pos_score = self.score #for inference, only need the positive score (no negative sampling needed)
             # calculate losses
-        	else:
-            		self.pos_score, self.neg_score = tf.split(self.score, 2)
-            		losses = margin - self.pos_score + self.neg_score
-            		# make loss >= 0
-            		losses = tf.clip_by_value(losses, 0.0, 100.0)
-            		self.loss = tf.reduce_mean(losses) # self.loss = tensor
-            		# optimizer
-            		self.learning_rate = tf.Variable(init_learning_rate, trainable=False, name="learning_rate")
-            		self.learning_rate_decay_op = \
-                	self.learning_rate.assign(self.learning_rate*0.99)
+		else:
+			self.pos_score, self.neg_score = tf.split(self.score, 2)
+			losses = margin - self.pos_score + self.neg_score
+			# make loss >= 0
+			losses = tf.clip_by_value(losses, 0.0, 100.0)
+			self.loss = tf.reduce_mean(losses) # self.loss = tensor
+			# optimizer
+			self.learning_rate = tf.Variable(init_learning_rate, trainable=False, name="learning_rate")
+			self.learning_rate_decay_op = \
+			self.learning_rate.assign(self.learning_rate*0.99)
             
-            		# adam backprop as mentioned in paper
-            		optimizer = tf.train.AdamOptimizer(self.learning_rate)
-            		self.global_step = tf.Variable(0, trainable=False,name="global_step")
-            		# training op
+			# adam backprop as mentioned in paper
+			optimizer = tf.train.AdamOptimizer(self.learning_rate)
+			self.global_step = tf.Variable(0, trainable=False,name="global_step")
+			# training op
                         with tf.device('/gpu:1'):
-                	    self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
-                	# global step is just a count of how many times the variables have been updated
+			    self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
+			# global step is just a count of how many times the variables have been updated
   
                 # checkpoint saver
-                self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
+                self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=3)
                 # write summary
                 self.log_writer=tf.summary.FileWriter(os.path.join(self.train_dir, 'logs/'),self.session.graph)
                 self.summary = tf.Summary()
@@ -205,6 +205,7 @@ class Unreferenced():
             idx [batch_size]
         """
         if not idx:
+	    
             idx=[random.randint(0, data_size-1) for _ in range(batch_size)]
 	ids = [data[i][1] for i in idx]
 	lens = [data[i][0] for i in idx]
@@ -259,7 +260,7 @@ class Unreferenced():
                     data_size, batch_size / 2)
             negative_reply_batch += generated_reply_batch
         
-        neg_reply_sizes += generated_reply_sizes
+            neg_reply_sizes += generated_reply_sizes
 
 
         # compute sample loss and do optimize
@@ -297,10 +298,11 @@ class Unreferenced():
 	validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)
 	print("Writing validation + loss to " + self.train_dir)
-        if not additional_negative_samples:
+        if self.additional_negative_samples:
             print("Adding additional samples")
-            additional_negative_samples = data_helpers.load_data(data_dir, additional_negative_samples, self.rmax_length)
+            additional_negative_samples = data_helpers.load_data(data_dir, self.additional_negative_samples, self.rmax_length)
         else:
+            additional_negative_samples = ''
             print("Not adding additional samples")
         with self.session.as_default():
             self.init_model()
@@ -309,7 +311,7 @@ class Unreferenced():
             loss = 0.0
 	    validation_loss = 0.0
 	    if os.path.isfile(self.train_dir + "best_checkpoint.txt"):
-       	        with open(self.train_dir + "best_checkpoint.txt", "r") as best_file:
+		with open(self.train_dir + "best_checkpoint.txt", "r") as best_file:
 		    best_validation_loss = float(best_file.readlines()[1])
 		    
 	    else:

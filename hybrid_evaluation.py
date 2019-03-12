@@ -48,9 +48,9 @@ class Hybrid():
                 additional_negative_samples=additional_negative_samples
                 )
 
-    def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true, additional_negative_samples):
+    def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true):
         print("training unreferenced metric")
-        self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true, additional_negative_samples)
+        self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true)
     def normalize(self, scores, smin=None, smax=None, coefficient=None, smallest_value=0):
         if not smin and not smax:
 	    smin = min(scores)
@@ -172,6 +172,7 @@ if __name__ == '__main__':
     log_dir = args.log_dir
 
     batch_norm = args.batch_norm 
+    print("batch norm is " + str(batch_norm))
     gru_num_units = args.gru_num_units
     init_learning_rate = float(args.init_learning_rate) / 1000
     margin = float(args.margin) / 100
@@ -218,7 +219,7 @@ if __name__ == '__main__':
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
     if args.additional_negative_samples:
-        additional_negative_samples = os.path.join("data", "personachat", "generated_responses", "personachat_train_responses.txt")
+        additional_negative_samples = os.path.join("generated_responses", "personachat_train_responses.txt")
     else:
         additional_negative_samples = ''
 
@@ -258,4 +259,4 @@ if __name__ == '__main__':
         """train"""
         print("Training")
 	print("Data dir is " + data_dir)
-        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true, additional_negative_samples)
+        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)
