@@ -21,11 +21,12 @@ class Unreferenced():
             frembed,
             gru_num_units,
             mlp_units,
-            init_learning_rate=0.001,
+            init_learning_rate,
             l2_regular=0.1,
             margin=0.5, 
-            train_dir='train_data_new_hyper_other_defaults_twitter',
-            is_training=True
+            is_training=True,
+            batch_norm=False, 
+            train_dataset='',
             ):
         """
         Initialize related variables and construct the neural network graph.
@@ -38,9 +39,14 @@ class Unreferenced():
                 indicating the output units for each perceptron layer.
                 No need to specify the output layer size 1.
         """
-
         # initialize varialbes
-        self.train_dir = train_dir
+	print("Log dir is ")
+	print(log_dir)
+        if batch_norm: 
+            self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm")
+        else:
+            self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin))
+
         self.qmax_length = qmax_length
         self.rmax_length = rmax_length
         random.seed()
@@ -128,14 +134,12 @@ class Unreferenced():
                             activation_fn=tf.tanh,
                             weight_regularizer=tf.contrib.layers. \
                                     l2_regularizer(l2_regular))
-
-		"""
-			inputs = tf.contrib.layers.batch_norm(
-			    inputs,
-			    center=True, scale=True,
-			    is_training=is_training)
-                """
-		self.test = inputs
+                        if batch_norm: 
+		        	inputs = tf.contrib.layers.batch_norm(
+			                 inputs,
+			                 center=True, scale=True,
+			                 is_training=is_training)
+                self.test = inputs
                 # dropout layer
                 self.training = tf.placeholder(tf.bool, name='training')
                 inputs_dropout = tf.layers.dropout(inputs, training=self.training)
@@ -172,7 +176,7 @@ class Unreferenced():
                 # checkpoint saver
                 self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
                 # write summary
-                self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),self.session.graph)
+                self.log_writer=tf.summary.FileWriter(os.path.join(self.train_dir, 'logs/'),self.session.graph)
                 self.summary = tf.Summary()
 
 
@@ -270,15 +274,15 @@ class Unreferenced():
 	data_size = len(queries)
 	validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)
-	print("Writing validation + loss to " + data_dir)
+	print("Writing validation + loss to " + self.train_dir)
         with self.session.as_default():
             self.init_model()
 
             checkpoint_path = os.path.join(self.train_dir, "unref.model")
             loss = 0.0
 	    validation_loss = 0.0
-	    if os.path.isfile(data_dir + "best_checkpoint.txt"):
-       	        with open(data_dir + "best_checkpoint.txt", "r") as best_file:
+	    if os.path.isfile(self.train_dir + "best_checkpoint.txt"):
+       	        with open(self.train_dir + "best_checkpoint.txt", "r") as best_file:
 		    best_validation_loss = float(best_file.readlines()[1])
 		    
 	    else:
@@ -320,8 +324,6 @@ class Unreferenced():
                     loss = 0.0
 		    validation_loss = 0.0
                     self.log_writer.add_summary(self.summary, step)
-                    self.saver.save(self.session, checkpoint_path,
-                            global_step=self.global_step)
 
 #                    """ Debug
                     query_batch, query_sizes, idx = self.get_batch(queries, data_size, 10)
