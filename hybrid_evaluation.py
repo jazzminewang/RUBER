@@ -61,7 +61,7 @@ class Hybrid():
 	    smin = smin
 	    diff = smax - smin
         if coefficient:
-	        ret = [smallest_value + (coefficient * (s - smin) / diff) for s in scores]
+		ret = [smallest_value + (coefficient * (s - smin) / diff) for s in scores]
 	else:
 	    ret = [smallest_value + ((s - smin) / diff) for s in scores]
         return ret
