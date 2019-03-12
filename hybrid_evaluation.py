@@ -77,8 +77,16 @@ class Hybrid():
         scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores \
                 = self.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, \
                     '%s.vocab%d'%(training_fquery, qmax_length),'%s.vocab%d'%(training_freply, rmax_length), checkpoint_dir)
-
-        csv_title = os.path.join('./results', checkpoint_dir, validation_freply_generated + str(int(time.time())) + ".csv")
+	csv_dir = os.path.join('./results', "ADEM", "validation", checkpoint_dir)
+	print(csv_dir)
+	reply_file_path = validation_freply_generated.split("/")
+	reply_file = reply_file_path[len(reply_file_path) - 1]
+	print(reply_file)
+        csv_title = os.path.join(csv_dir, reply_file + str(int(time.time())) + ".csv")
+	print("Csv title: ")
+	print(csv_title)
+	if not os.path.exists(csv_dir):
+	    os.makedirs(csv_dir)
         
         """write results to CSV"""
         with open(csv_title, 'w+') as csvfile:
@@ -163,11 +171,14 @@ if __name__ == '__main__':
     init_learning_rate = float(args.init_learning_rate) / 1000
     margin = float(args.margin) / 100
 
+
     if args.reply_files and args.checkpoint_dirs:
-        checkpoint_dirs = args.checkpoint_dirs
-        reply_files = args.reply_files
+        checkpoint_dirs = args.checkpoint_dirs[0].split(" ")
+        reply_files = args.reply_files[0].split(" ")
         print("Checkpoint dirs: ")
         print(checkpoint_dirs)
+	print("Example checkpoint dir: ")
+	print(checkpoint_dirs[0])
         print("Reply files: ")
 	print(reply_files)
 
@@ -217,14 +228,15 @@ if __name__ == '__main__':
     if args.mode == "validate":
 	print("First checkpoint dir " + checkpoint_dirs[0])
 	print("First reply file " + reply_files[0])
-        for checkpoint_dir, reply_file in zip(checkpoint_dirs, reply_files):
-            print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
-            validation_freply_generated = os.path.join(validation_dataset, "validation", reply_file)
+        for checkpoint_dir in checkpoint_dirs:
+	    for reply_file in reply_files: 
+                print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
+                validation_freply_generated = os.path.join(validation_dataset, "validation", reply_file)
 
-            hybrid.validate_to_csv(
-                checkpoint_dir, data_dir, validation_fquery, \
-                    validation_freply_generated, validation_freply_true, \
-                        training_fquery, qmax_length, training_freply, rmax_length)
+                hybrid.validate_to_csv(
+                    checkpoint_dir, data_dir, validation_fquery, \
+                        validation_freply_generated, validation_freply_true, \
+                            training_fquery, qmax_length, training_freply, rmax_length)
 
     else:
         """train"""
