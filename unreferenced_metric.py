@@ -27,6 +27,8 @@ class Unreferenced():
             is_training=True,
             batch_norm=False, 
             train_dataset='',
+	    log_dir="tmp/",
+            scramble=False,
             ):
         """
         Initialize related variables and construct the neural network graph.
@@ -42,10 +44,16 @@ class Unreferenced():
         # initialize varialbes
 	print("Log dir is ")
 	print(log_dir)
-        if batch_norm: 
-            self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_sampling")
+        if batch_norm:
+            if scramble:
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_sampling_scramble")
+            else:  
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_sampling")
         else:
-            self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_sampling")
+	    if scramble:
+	        self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_sampling_scramble")
+            else:
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_sampling")
 
         self.qmax_length = qmax_length
         self.rmax_length = rmax_length

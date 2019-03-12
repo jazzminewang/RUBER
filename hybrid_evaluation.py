@@ -27,6 +27,7 @@ class Hybrid():
             is_training=True,
             train_dataset='',
 	    log_dir="training",
+	    scramble=False
         ):
         print("Initializing referenced model")
         self.ref=Referenced(data_dir, frword2vec, ref_method)
@@ -41,7 +42,8 @@ class Hybrid():
                 is_training=is_training,
                 batch_norm=batch_norm,
                 train_dataset=train_dataset,
-		log_dir=log_dir
+		log_dir=log_dir,
+                scramble=scramble
                 )
 
     def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true, additional_negative_samples):
@@ -156,6 +158,7 @@ if __name__ == '__main__':
     parser.add_argument('-init_learning_rate', type=float)
     parser.add_argument('-margin', type=float)
     parser.add_argument('-batch_norm', type=bool, default=False)
+    parser.add_argument('-scramble', type=bool, default=False)
 
     args = parser.parse_args()
 
@@ -185,8 +188,12 @@ if __name__ == '__main__':
 
     print("Mode: " + args.mode)
 
-    training_fquery = train_dataset + "/train/queries.txt"
-    training_freply = train_dataset + "/train/replies.txt"
+    if args.scramble:
+        sub_data = "scramble_train"
+    else:
+        sub_data = "train"
+    training_fquery = os.path.join(train_dataset, sub_data, "queries.txt")
+    training_freply = os.path.join(train_dataset, sub_data, "replies.txt")
     validation_fquery = validation_dataset + "/validation/queries.txt"
     if args.validation_dataset =="ADEM":
         validation_freply_true = validation_dataset + "/validation/true.txt"
@@ -219,7 +226,8 @@ if __name__ == '__main__':
         batch_norm=batch_norm,
         is_training=is_training, 
         train_dataset=train_dataset,
-	log_dir=log_dir
+	log_dir=log_dir,
+        scramble=args.scramble
         )
     
     
@@ -241,5 +249,5 @@ if __name__ == '__main__':
         """train"""
         print("Training")
 	print("Data dir is " + data_dir)
-        additional_negative_samples = os.path.join("data", "personachat", "generated_responses", "personachat_train_responses.txt")
+        additional_negative_samples = os.path.join("generated_responses", "personachat_train_responses.txt")
         hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true, additional_negative_samples)
