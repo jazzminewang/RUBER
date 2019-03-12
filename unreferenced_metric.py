@@ -275,7 +275,7 @@ class Unreferenced():
             self.session.run(tf.global_variables_initializer())
 
     def train(self, data_dir, fquery, freply, validation_fquery, validation_freply_true,
-            batch_size=128, steps_per_checkpoint=100, additional_negative_samples):
+        additional_negative_samples, batch_size=128, steps_per_checkpoint=100):
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
 	data_size = len(queries)
