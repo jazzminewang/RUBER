@@ -27,8 +27,9 @@ class Unreferenced():
             is_training=True,
             batch_norm=False, 
             train_dataset='',
-	    log_dir="tmp/",
+	        log_dir="tmp/",
             scramble=False,
+            additional_negative_samples='',
             ):
         """
         Initialize related variables and construct the neural network graph.
@@ -239,20 +240,27 @@ class Unreferenced():
 
         return step, loss
 
-    def train_step(self, queries, replies, data_size, batch_size, generated_responses):
+    def train_step(self, queries, replies, data_size, batch_size, generated_responses=None):
 
         # data_size = # of queries
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
-        negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
-                data_size, batch_size / 2)
 
-        # Add noisy responses from HRED models for half of the dataset
-        generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
+
+        if not generated_responses:
+            negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                data_size, batch_size)
+        else:
+            negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size / 2)
-        negative_reply_batch += generated_reply_batch
+            # Add noisy responses from HRED models for half of the dataset
+            generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
+                    data_size, batch_size / 2)
+            negative_reply_batch += generated_reply_batch
+        
         neg_reply_sizes += generated_reply_sizes
+
 
         # compute sample loss and do optimize
         feed_dict = self.make_input_feed(query_batch, query_sizes,
@@ -282,15 +290,15 @@ class Unreferenced():
             print ('Initializing model variables')
             self.session.run(tf.global_variables_initializer())
 
-    def train(self, data_dir, fquery, freply, validation_fquery, validation_freply_true,
-        additional_negative_samples, batch_size=128, steps_per_checkpoint=100):
+    def train(self, data_dir, fquery, freply, validation_fquery, validation_freply_true, batch_size=128, steps_per_checkpoint=100):
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
 	data_size = len(queries)
 	validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)
 	print("Writing validation + loss to " + self.train_dir)
-        negative_samples = data_helpers.load_data(data_dir, additional_negative_samples, self.rmax_length)
+        if self.additional_negative_samples != '':
+            additional_negative_samples = data_helpers.load_data(data_dir, self.additional_negative_samples, self.rmax_length)
 
         with self.session.as_default():
             self.init_model()
@@ -307,7 +315,7 @@ class Unreferenced():
             prev_losses = [1.0]
 	    impatience = 0.0
             while True: 
-                step, l = self.train_step(queries, replies, data_size, batch_size, negative_samples)
+                step, l = self.train_step(queries, replies, data_size, batch_size, additional_negative_samples)
                 _, validation_l = self.get_validation_loss(validation_queries, validation_replies, len(validation_queries), batch_size)
 
                 loss += l
