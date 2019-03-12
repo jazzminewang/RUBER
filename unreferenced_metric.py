@@ -249,11 +249,9 @@ class Unreferenced():
 
 
         if not generated_responses:
-	    print("not getting generated responses")
             negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size)
         else:
-            print("getting generated responses")
             negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size / 2)
             # Add noisy responses from HRED models for half of the dataset
@@ -299,9 +297,11 @@ class Unreferenced():
 	validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)
 	print("Writing validation + loss to " + self.train_dir)
-        if self.additional_negative_samples != '':
-            additional_negative_samples = data_helpers.load_data(data_dir, self.additional_negative_samples, self.rmax_length)
-
+        if not additional_negative_samples:
+            print("Adding additional samples")
+            additional_negative_samples = data_helpers.load_data(data_dir, additional_negative_samples, self.rmax_length)
+        else:
+            print("Not adding additional samples")
         with self.session.as_default():
             self.init_model()
 
