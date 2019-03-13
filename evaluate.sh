@@ -20,6 +20,11 @@ do
             if [[ $item == *"batchnorm"* ]]; then
                 echo $item
                 echo "edited item"
+
+                tmux new-session -d -s "twitter_${item}" \; \
+                    send-keys "conda activate RUBER" \; \
+                    send-keys "python hybrid_evaluation.py personachat personachat train -gru_num_units=${gru_num_unit} -init_learning_rate=${init_learning_rate} -margin=${margin} -batch_norm=True"
+
                 tmux new-session -d -s $item \; \
                     send-keys "conda activate RUBER" \; \
                     send-keys "python hybrid_evaluation.py twitter ADEM validate -gru_num_units=${gru_num_unit} -init_learning_rate=1 -margin=50 -batch_norm=True"
