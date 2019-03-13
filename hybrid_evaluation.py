@@ -76,13 +76,13 @@ class Hybrid():
 
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
 
-    def validate_to_csv(self, checkpoint_dir, data_dir, validation_fquery, validation_freply_generated, validation_freply_true, training_fquery, qmax_length, training_freply, rmax_length, validation_dataset):
+    def validate_to_csv(self, checkpoint_dir, data_dir, validation_fquery, validation_freply_generated, validation_freply_true, training_fquery, qmax_length, training_freply, rmax_length, train_dataset, validation_dataset):
 	print("Starting validation")
         scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores \
                 = self.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, \
                     '%s.vocab%d'%(training_fquery, qmax_length),'%s.vocab%d'%(training_freply, rmax_length), checkpoint_dir)
 	
-        csv_dir = os.path.join('./results', validation_dataset, "validation", checkpoint_dir)
+        csv_dir = os.path.join('./results', checkpoint_dir, validation_dataset)
 
 	print(csv_dir)
 	reply_file_path = validation_freply_generated.split("/")
@@ -215,19 +215,17 @@ if __name__ == '__main__':
 
         checkpoint_dirs = args.evaluation_checkpoint_dirs[0].split(" ")
         reply_files = args.reply_files[0].split(" ")
-	print("First checkpoint dir " + checkpoint_dirs[0])
-	print("First reply file " + reply_files[0])
         for checkpoint_dir in checkpoint_dirs:
 	    for reply_file in reply_files: 
-                print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
                 checkpoint_dir = os.path.join(experiment_folder, checkpoint_dir)
+                print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
                 validation_freply_generated = os.path.join(validation_dataset, sub_dir_validate, reply_file)
 
             #TODO: add path for where the CSVs will be written to
                 hybrid.validate_to_csv(
                     checkpoint_dir, data_dir, validation_fquery, \
                         validation_freply_generated, validation_freply_true, \
-                            training_fquery, qmax_length, training_freply, rmax_length, validation_dataset)
+                            training_fquery, qmax_length, training_freply, rmax_length, train_dataset, validation_dataset)
 
     else:
         """train"""
