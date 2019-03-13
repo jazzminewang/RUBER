@@ -143,6 +143,7 @@ class Unreferenced():
                             activation_fn=tf.tanh,
                             weight_regularizer=tf.contrib.layers. \
                                     l2_regularizer(l2_regular))
+
                         if batch_norm: 
 				inputs = tf.contrib.layers.batch_norm(
 					 inputs,
