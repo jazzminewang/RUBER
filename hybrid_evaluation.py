@@ -27,6 +27,8 @@ class Hybrid():
             is_training=True,
             train_dataset='',
 	    log_dir="training",
+	    scramble=False,
+        additional_negative_samples='',
         ):
         print("Initializing referenced model")
         self.ref=Referenced(data_dir, frword2vec, ref_method)
@@ -41,13 +43,14 @@ class Hybrid():
                 is_training=is_training,
                 batch_norm=batch_norm,
                 train_dataset=train_dataset,
-		log_dir=log_dir
+		log_dir=log_dir,
+                scramble=scramble,
+                additional_negative_samples=additional_negative_samples
                 )
 
     def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true):
         print("training unreferenced metric")
         self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true)
-
     def normalize(self, scores, smin=None, smax=None, coefficient=None, smallest_value=0):
         if not smin and not smax:
 	    smin = min(scores)
@@ -58,7 +61,7 @@ class Hybrid():
 	    smin = smin
 	    diff = smax - smin
         if coefficient:
-	        ret = [smallest_value + (coefficient * (s - smin) / diff) for s in scores]
+		ret = [smallest_value + (coefficient * (s - smin) / diff) for s in scores]
 	else:
 	    ret = [smallest_value + ((s - smin) / diff) for s in scores]
         return ret
@@ -157,6 +160,8 @@ if __name__ == '__main__':
     parser.add_argument('-init_learning_rate', type=float)
     parser.add_argument('-margin', type=float)
     parser.add_argument('-batch_norm', type=bool, default=False)
+    parser.add_argument('-scramble', type=bool, default=False)
+    parser.add_argument('-additional_negative_samples', type=bool, default=False)
 
     args = parser.parse_args()
 
@@ -167,6 +172,7 @@ if __name__ == '__main__':
     log_dir = args.log_dir
 
     batch_norm = args.batch_norm 
+    print("batch norm is " + str(batch_norm))
     gru_num_units = args.gru_num_units
     init_learning_rate = float(args.init_learning_rate) / 1000
     margin = float(args.margin) / 100
@@ -186,8 +192,12 @@ if __name__ == '__main__':
 
     print("Mode: " + args.mode)
 
-    training_fquery = train_dataset + "/train/queries.txt"
-    training_freply = train_dataset + "/train/replies.txt"
+    if args.scramble:
+        sub_data = "scramble_train"
+    else:
+        sub_data = "train"
+    training_fquery = os.path.join(train_dataset, sub_data, "queries.txt")
+    training_freply = os.path.join(train_dataset, sub_data, "replies.txt")
     validation_fquery = validation_dataset + "/validation/queries.txt"
     if args.validation_dataset =="ADEM":
         validation_freply_true = validation_dataset + "/validation/true.txt"
@@ -208,6 +218,11 @@ if __name__ == '__main__':
     """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
+    if args.additional_negative_samples:
+        additional_negative_samples = os.path.join("generated_responses", "personachat_train_responses.txt")
+    else:
+        additional_negative_samples = ''
+
     print("Initializing Hybrid object with " + training_fquery + " as training query file")
     hybrid = Hybrid(
         data_dir, 
@@ -220,7 +235,9 @@ if __name__ == '__main__':
         batch_norm=batch_norm,
         is_training=is_training, 
         train_dataset=train_dataset,
-	log_dir=log_dir
+	log_dir=log_dir,
+        scramble=args.scramble,
+        additional_negative_samples=additional_negative_samples
         )
     
     
