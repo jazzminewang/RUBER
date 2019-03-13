@@ -119,37 +119,11 @@ class Hybrid():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    # best logic:
-    # - dataset (ADEM, personachat, or twitter)
-    # - mode (training or validation)
-    # --reply_file (optional)
-
-    # File structure
-
-    # data
-    # -- word2vec embeddings
-    # - ADEM
-    #   - validation
-        #   - [ assorted files for validation ]
-    #   - train
-        #   - [ assorted files for training ]
-    # - personachat
-    #   - validation
-            #   - [ assorted files for validation ]
-    #   - train [RENAME]
-            #   - [ assorted files for training ]
-    # - twitter
-    #   - validation
-            #   - [ assorted files for validation ]
-    #   - train
-            #   - [ assorted files for training ]
-
     data_dir = "./data"
 
     parser.add_argument('train_dataset')
     parser.add_argument('validation_dataset')
     parser.add_argument('mode')
-
 
     # Evaluation
     parser.add_argument('-reply_files', nargs='+')
@@ -202,6 +176,7 @@ if __name__ == '__main__':
     training_fquery = os.path.join(train_dataset, sub_data, "queries.txt")
     training_freply = os.path.join(train_dataset, sub_data, "replies.txt")
     validation_fquery = validation_dataset + "/validation/queries.txt"
+
     if args.validation_dataset =="ADEM":
         validation_fquery = validation_dataset + "/validation/queries.txt"
         validation_freply_true = validation_dataset + "/validation/true.txt"
