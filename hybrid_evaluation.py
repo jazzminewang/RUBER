@@ -125,12 +125,8 @@ if __name__ == '__main__':
     parser.add_argument('validation_dataset')
     parser.add_argument('mode')
 
-    # Evaluation
-    parser.add_argument('-reply_files', nargs='+')
-    parser.add_argument('-evaluation_checkpoint_dirs', nargs='+')
-
     # Training
-    parser.add_argument('-log_dir')
+    parser.add_argument('-log_dir', default="experiments/")
 
     # Hyperparameters
     parser.add_argument('-gru_num_units', type=int)
@@ -139,6 +135,10 @@ if __name__ == '__main__':
     parser.add_argument('-batch_norm', type=bool, default=False)
     parser.add_argument('-scramble', type=bool, default=False)
     parser.add_argument('-additional_negative_samples', type=bool, default=False)
+
+    # Evaluation
+    parser.add_argument('-reply_files', nargs='+')
+    parser.add_argument('-evaluation_checkpoint_dirs', nargs='+')
 
     args = parser.parse_args()
 
@@ -149,62 +149,46 @@ if __name__ == '__main__':
     log_dir = args.log_dir
 
     batch_norm = args.batch_norm 
-    print("batch norm is " + str(batch_norm))
     gru_num_units = args.gru_num_units
-    init_learning_rate = float(args.init_learning_rate) / 1000
-    margin = float(args.margin) / 100
-
-
-    if args.reply_files and args.checkpoint_dirs:
-        checkpoint_dirs = args.checkpoint_dirs[0].split(" ")
-        reply_files = args.reply_files[0].split(" ")
-        print("Checkpoint dirs: ")
-        print(checkpoint_dirs)
-	print("Example checkpoint dir: ")
-	print(checkpoint_dirs[0])
-        print("Reply files: ")
-	print(reply_files)
-
-    qmax_length, rmax_length = [20, 30]
-
-    print("Mode: " + args.mode)
-
-    if args.scramble:
-        sub_data = "scramble_train"
-    else:
-        sub_data = "train"
-    training_fquery = os.path.join(train_dataset, sub_data, "queries.txt")
-    training_freply = os.path.join(train_dataset, sub_data, "replies.txt")
-    validation_fquery = validation_dataset + "/validation/queries.txt"
-
-    if args.validation_dataset =="ADEM":
-        validation_fquery = validation_dataset + "/validation/queries.txt"
-        validation_freply_true = validation_dataset + "/validation/true.txt"
-        if reply_files:
-             validation_freply_generated = validation_dataset + "/validation/" + reply_files[0]
-        else:
-             validation_freply_generated = validation_dataset + "/validation/hred_replies.txt"
-    else:
-        #personachat validation on test set
-        validation_fquery = validation_dataset + "/test/queries.txt"
-        validation_freply_true = validation_dataset + "/test/ground_truth.txt"
-        if reply_files:
-             validation_freply_generated = validation_dataset + "/test/" + reply_files[0]
 
     if args.mode == "train":
         is_training=True
     else: 
         is_training=False
+    
+    if is_training:
+        init_learning_rate = float(args.init_learning_rate) / 1000
+        margin = float(args.margin) / 100
+    else:
+        # If evaluating, set arbitrary values
+        init_learning_rate=0.001
+        margin=0.5
+
+    # Choose scrambled or non-scrambled training set
+    if args.scramble:
+        sub_dir_train = "scramble_train"
+    else:
+        sub_dir_train = "train"
+
+    training_fquery = os.path.join(train_dataset, sub_dir_train, "queries.txt")
+    training_freply = os.path.join(train_dataset, sub_dir_train, "replies.txt")
+
+    # Choose ADEM or personachat validation
+    if args.validation_dataset =="ADEM":
+        sub_dir_validate = "validation"
+    else:
+        sub_dir_validate = "test"
+
+    validation_fquery = os.path.join(validation_dataset, sub_dir_validate, "queries.txt")
+    validation_freply_true = os.path.join(validation_dataset, sub_dir_validate, "ground_truth.txt")
 
     """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
-
-    if args.additional_negative_samples:
-        additional_negative_samples = os.path.join("generated_responses", "personachat_train_responses.txt")
-    else:
-        additional_negative_samples = ''
-
+    qmax_length, rmax_length = [20, 30]
+    
+    print("Mode: " + args.mode)
     print("Initializing Hybrid object with " + training_fquery + " as training query file")
+
     hybrid = Hybrid(
         data_dir, 
         frword2vec, 
@@ -216,23 +200,26 @@ if __name__ == '__main__':
         batch_norm=batch_norm,
         is_training=is_training, 
         train_dataset=train_dataset,
-	log_dir=log_dir,
+	    log_dir=log_dir,
         scramble=args.scramble,
         additional_negative_samples=additional_negative_samples
         )
     
-    
-    """test"""
-    if args.mode == "validate":
+    if not is_training:
+        """test"""
+        experiment_folder = log_dir
+
+        checkpoint_dirs = args.evaluation_checkpoint_dirs[0].split(" ")
+        reply_files = args.reply_files[0].split(" ")
 	print("First checkpoint dir " + checkpoint_dirs[0])
 	print("First reply file " + reply_files[0])
         for checkpoint_dir in checkpoint_dirs:
 	    for reply_file in reply_files: 
                 print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
-		if validation_dataset == "ADEM":
-                    validation_freply_generated = os.path.join(validation_dataset, "validation", reply_file)
-                else:
-		    validation_freply_generated = os.path.join(validation_dataset, "test", reply_file)
+                checkpoint_dir = os.path.join(experiment_folder, checkpoint_dir)
+                validation_freply_generated = os.path.join(validation_dataset, sub_dir_validate, reply_file)
+
+            #TODO: add path for where the CSVs will be written to
                 hybrid.validate_to_csv(
                     checkpoint_dir, data_dir, validation_fquery, \
                         validation_freply_generated, validation_freply_true, \
@@ -241,5 +228,8 @@ if __name__ == '__main__':
     else:
         """train"""
         print("Training")
-	print("Data dir is " + data_dir)
+        if args.additional_negative_samples:
+            additional_negative_samples = os.path.join("generated_responses", "personachat_train_responses.txt")
+        else:
+            additional_negative_samples = ''
         hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)
