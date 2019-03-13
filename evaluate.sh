@@ -12,26 +12,19 @@ prefix="./"
 # Loop through twitter validation on personachat and ADEM, parsing out gru_num_units and batch_norm
 for item in ${twitter_checkpoints[*]}
 do
-
     item=${item#"$prefix"}
     for gru_num_unit in ${gru_num_units[@]}
     do
         if [[ $item == *$gru_num_unit*  ]]; then
             if [[ $item == *"batchnorm"* ]]; then
-                echo $item
-                echo "edited item"
-
-                tmux new-session -d -s "twitter_${item}" \; \
-                    send-keys "conda activate RUBER" \; \
-                    send-keys "python hybrid_evaluation.py personachat personachat train -gru_num_units=${gru_num_unit} -init_learning_rate=${init_learning_rate} -margin=${margin} -batch_norm=True"
 
                 tmux new-session -d -s $item \; \
-                    send-keys "conda activate RUBER" \; \
-                    send-keys "python hybrid_evaluation.py twitter ADEM validate -gru_num_units=${gru_num_unit} -init_learning_rate=1 -margin=50 -batch_norm=True"
+                    send-keys "conda activate RUBER" Enter \; \
+                    send-keys "python hybrid_evaluation.py twitter ADEM validate -gru_num_units=${gru_num_unit} -init_learning_rate=1 -margin=50 -batch_norm=True" Enter
             else
                 tmux new-session -d -s $item \; \
-                    send-keys "conda activate RUBER" \; \
-                    send-keys "python hybrid_evaluation.py twitter ADEM validate -gru_num_units=${gru_num_unit} -init_learning_rate=1 -margin=50" 
+                    send-keys "conda activate RUBER" Enter \; \
+                    send-keys "python hybrid_evaluation.py twitter ADEM validate -gru_num_units=${gru_num_unit} -init_learning_rate=1 -margin=50" Enter
             fi
         fi
     done

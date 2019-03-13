@@ -186,6 +186,10 @@ if __name__ == '__main__':
     frword2vec = 'GoogleNews-vectors-negative300.txt'
     qmax_length, rmax_length = [20, 30]
     
+    if args.additional_negative_samples:
+        additional_negative_samples = os.path.join("generated_responses", "personachat_train_responses.txt")
+    else:
+        additional_negative_samples = ''
     print("Mode: " + args.mode)
     print("Initializing Hybrid object with " + training_fquery + " as training query file")
 
@@ -228,8 +232,4 @@ if __name__ == '__main__':
     else:
         """train"""
         print("Training")
-        if args.additional_negative_samples:
-            additional_negative_samples = os.path.join("generated_responses", "personachat_train_responses.txt")
-        else:
-            additional_negative_samples = ''
         hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)
