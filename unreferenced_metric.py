@@ -21,11 +21,15 @@ class Unreferenced():
             frembed,
             gru_num_units,
             mlp_units,
-            init_learning_rate=0.001,
+            init_learning_rate,
             l2_regular=0.1,
             margin=0.5, 
-            train_dir='train_data_new_hyper_other_defaults_twitter',
-            is_training=True
+            is_training=True,
+            batch_norm=False, 
+            train_dataset='',
+		log_dir="tmp/",
+            scramble=False,
+            additional_negative_samples='',
             ):
         """
         Initialize related variables and construct the neural network graph.
@@ -38,9 +42,20 @@ class Unreferenced():
                 indicating the output units for each perceptron layer.
                 No need to specify the output layer size 1.
         """
-
         # initialize varialbes
-        self.train_dir = train_dir
+	print("Log dir is ")
+	print(log_dir)
+        if batch_norm:
+            if scramble:
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_scramble" + additional_negative_samples.split("/")[0])
+            else:  
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + additional_negative_samples.split("/")[0])
+        else:
+	    if scramble:
+		self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin)+ "_scramble"  + additional_negative_samples.split("/")[0])
+            else:
+                self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + additional_negative_samples.split("/")[0])
+        self.additional_negative_samples = additional_negative_samples
         self.qmax_length = qmax_length
         self.rmax_length = rmax_length
         random.seed()
@@ -129,13 +144,12 @@ class Unreferenced():
                             weight_regularizer=tf.contrib.layers. \
                                     l2_regularizer(l2_regular))
 
-		"""	
-			inputs = tf.contrib.layers.batch_norm(
-			    inputs,
-			    center=True, scale=True,
-			    is_training=is_training)
-                """
-		self.test = inputs
+                        if batch_norm: 
+				inputs = tf.contrib.layers.batch_norm(
+					 inputs,
+					 center=True, scale=True,
+					 is_training=is_training)
+                self.test = inputs
                 # dropout layer
                 self.training = tf.placeholder(tf.bool, name='training')
                 inputs_dropout = tf.layers.dropout(inputs, training=self.training)
@@ -147,32 +161,32 @@ class Unreferenced():
 		self.score = tf.reshape(self.score, [-1]) # [batch_size]
 
 	with tf.variable_scope('train'):
-        	if not is_training:
+		if not is_training:
 		    self.pos_score = self.score #for inference, only need the positive score (no negative sampling needed)
             # calculate losses
-        	else:
-            		self.pos_score, self.neg_score = tf.split(self.score, 2)
-            		losses = margin - self.pos_score + self.neg_score
-            		# make loss >= 0
-            		losses = tf.clip_by_value(losses, 0.0, 100.0)
-            		self.loss = tf.reduce_mean(losses) # self.loss = tensor
-            		# optimizer
-            		self.learning_rate = tf.Variable(init_learning_rate, trainable=False, name="learning_rate")
-            		self.learning_rate_decay_op = \
-                	self.learning_rate.assign(self.learning_rate*0.99)
+		else:
+			self.pos_score, self.neg_score = tf.split(self.score, 2)
+			losses = margin - self.pos_score + self.neg_score
+			# make loss >= 0
+			losses = tf.clip_by_value(losses, 0.0, 100.0)
+			self.loss = tf.reduce_mean(losses) # self.loss = tensor
+			# optimizer
+			self.learning_rate = tf.Variable(init_learning_rate, trainable=False, name="learning_rate")
+			self.learning_rate_decay_op = \
+			self.learning_rate.assign(self.learning_rate*0.99)
             
-            		# adam backprop as mentioned in paper
-            		optimizer = tf.train.AdamOptimizer(self.learning_rate)
-            		self.global_step = tf.Variable(0, trainable=False,name="global_step")
-            		# training op
+			# adam backprop as mentioned in paper
+			optimizer = tf.train.AdamOptimizer(self.learning_rate)
+			self.global_step = tf.Variable(0, trainable=False,name="global_step")
+			# training op
                         with tf.device('/gpu:1'):
-                	    self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
-                	# global step is just a count of how many times the variables have been updated
+			    self.train_op = optimizer.minimize(self.loss, self.global_step) # 'magic' tensor that updates the model. updates model to minimize loss. 
+			# global step is just a count of how many times the variables have been updated
   
                 # checkpoint saver
-                self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
+                self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=3)
                 # write summary
-                self.log_writer=tf.summary.FileWriter(os.path.join(train_dir, 'logs/'),self.session.graph)
+                self.log_writer=tf.summary.FileWriter(os.path.join(self.train_dir, 'logs/'),self.session.graph)
                 self.summary = tf.Summary()
 
 
@@ -192,6 +206,7 @@ class Unreferenced():
             idx [batch_size]
         """
         if not idx:
+	    
             idx=[random.randint(0, data_size-1) for _ in range(batch_size)]
 	ids = [data[i][1] for i in idx]
 	lens = [data[i][0] for i in idx]
@@ -210,7 +225,6 @@ class Unreferenced():
             self.reply_inputs: reply_batch,
             self.training : training}
 
-
     def get_validation_loss(self, queries, replies, data_size, batch_size):
         # data_size = # of queries
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
@@ -228,13 +242,28 @@ class Unreferenced():
 
         return step, loss
 
-    def train_step(self, queries, replies, data_size, batch_size):
+    def train_step(self, queries, replies, data_size, batch_size, generated_responses=None):
+
         # data_size = # of queries
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
-        negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+
+
+        if not generated_responses:
+            negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size)
+        else:
+            negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                data_size, batch_size / 2)
+            # Add noisy responses from HRED models for half of the dataset
+            generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
+                    data_size, batch_size / 2)
+            negative_reply_batch += generated_reply_batch
+        
+            neg_reply_sizes += generated_reply_sizes
+
+
         # compute sample loss and do optimize
         feed_dict = self.make_input_feed(query_batch, query_sizes,
                 reply_batch, reply_sizes, negative_reply_batch, neg_reply_sizes)
@@ -263,22 +292,27 @@ class Unreferenced():
             print ('Initializing model variables')
             self.session.run(tf.global_variables_initializer())
 
-    def train(self, data_dir, fquery, freply, validation_fquery, validation_freply_true,
-            batch_size=128, steps_per_checkpoint=100):
+    def train(self, data_dir, fquery, freply, validation_fquery, validation_freply_true, batch_size=128, steps_per_checkpoint=100):
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
 	data_size = len(queries)
 	validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)
-	print("Writing validation + loss to " + data_dir)
+	print("Writing validation + loss to " + self.train_dir)
+        if self.additional_negative_samples:
+            print("Adding additional samples")
+            additional_negative_samples = data_helpers.load_data(data_dir, self.additional_negative_samples, self.rmax_length)
+        else:
+            additional_negative_samples = ''
+            print("Not adding additional samples")
         with self.session.as_default():
             self.init_model()
 
             checkpoint_path = os.path.join(self.train_dir, "unref.model")
             loss = 0.0
 	    validation_loss = 0.0
-	    if os.path.isfile(data_dir + "best_checkpoint.txt"):
-       	        with open(data_dir + "best_checkpoint.txt", "r") as best_file:
+	    if os.path.isfile(self.train_dir + "best_checkpoint.txt"):
+		with open(self.train_dir + "best_checkpoint.txt", "r") as best_file:
 		    best_validation_loss = float(best_file.readlines()[1])
 		    
 	    else:
@@ -286,7 +320,7 @@ class Unreferenced():
             prev_losses = [1.0]
 	    impatience = 0.0
             while True: 
-                step, l = self.train_step(queries, replies, data_size, batch_size)
+                step, l = self.train_step(queries, replies, data_size, batch_size, additional_negative_samples)
                 _, validation_l = self.get_validation_loss(validation_queries, validation_replies, len(validation_queries), batch_size)
 
                 loss += l
@@ -320,8 +354,6 @@ class Unreferenced():
                     loss = 0.0
 		    validation_loss = 0.0
                     self.log_writer.add_summary(self.summary, step)
-                    self.saver.save(self.session, checkpoint_path,
-                            global_step=self.global_step)
 
 #                    """ Debug
                     query_batch, query_sizes, idx = self.get_batch(queries, data_size, 10)

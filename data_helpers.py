@@ -7,6 +7,7 @@ from tensorflow.contrib import learn
 from pathlib import Path
 import time
 import argparse
+import random
 
 def tokenizer(iterator):
     for value in iterator:
@@ -205,7 +206,6 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
         file path to file with all queries
         file path to file with all replies
     """
-    
     fquery_filename = os.path.join(processed_data_dir, "queries.txt")
     freply_filename = os.path.join(processed_data_dir, "replies.txt")
     fquery_file = Path(fquery_filename)
@@ -266,7 +266,7 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
                             else:
                                 queries.write(split[0]+ get_most_recent_context(context))
                                 replies.write(split[0])
-                                context.append(split[1])
+                                context.append(split[0])
                     
                     replies.write(filtered_lines[len(filtered_lines) - 1])
                 datafile.close()
@@ -276,21 +276,81 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
                 replies.close()
     return fquery_short, freply_short
 
+def randomize(lines, proportion):
+    new_lines = []
+    for i, line in enumerate(lines):
+	new_line = []
+        for word in line.split():
+            if random.randint(0, proportion) == 1:
+
+                rand_line = lines[random.randint(0, len(lines))-1].split()
+		if rand_line:
+                    rand_word = rand_line[random.randint(0, len(rand_line)-1)]
+                    word = rand_word
+		
+
+	    new_line.append(word)
+        string_line =" ".join(str(x) for x in new_line)
+        new_lines.append(string_line) 
+    return new_lines
+    
+
+def scramble(raw_data_dir, processed_data_dir):
+    fquery_filename = os.path.join(processed_data_dir, "queries.txt")
+    freply_filename = os.path.join(processed_data_dir, "replies.txt")
+    fquery_file = Path(fquery_filename)
+    freply_file = Path(freply_filename)
+    fquery_short = "queries.txt" 
+    freply_short = "replies.txt"
+
+    with open(fquery_filename, "r") as fquery, \
+        open(freply_filename, "r") as freply:
+            fquery_lines = fquery.readlines()
+            freply_lines = freply.readlines()
+    print("Randomizing query file " + fquery_filename)
+    new_fquery = randomize(fquery_lines, 10)
+    print("Randomizing reply file " + freply_filename)
+    new_freply = randomize(freply_lines, 10)
+
+    scrambled_dir = os.path.join(raw_data_dir, "scramble_train")
+    fquery_filename = os.path.join(scrambled_dir, "queries.txt")
+    freply_filename = os.path.join(scrambled_dir, "replies.txt")
+
+    with open(fquery_filename, "w+") as fquery, \
+        open(freply_filename, "w+") as freply:
+            for line in new_fquery:
+                fquery.write(line + "\n")
+            for line in new_freply:
+                freply.write(line + "\n")
+
+    print("Finished scrambling text - example sentence changes")
+    print(fquery_lines[:5])
+    print(new_fquery[:5])
+
+    return fquery_short, freply_short
+    
 if __name__ == '__main__':
     # Argument is dataset. Twitter or Personachat 
     query_max_length, reply_max_length = [20, 30]
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-dataset', help="Either Personachat or Twitter")
-
+    parser.add_argument('-scramble', action='store_true', help="If true, 1/10 of the words will be randomly switched")
 
     args = parser.parse_args()
     if args.dataset=="twitter":
 	    raw_data_dir = "./data/twitter"
             processed_train_dir = "./data/twitter/train/"
             processed_validation_dir = "./data/twitter/validation"
+
             print("Parsing twitter training data")
             fquery_train, freply_train = parse_twitter_dataset(raw_data_dir, processed_train_dir)
+
+            if args.scramble:
+                print("Scrambling twitter dataset")
+                fquery_train, freply_train = scramble(raw_data_dir, processed_train_dir)
+                processed_train_dir = os.path.join("data", "twitter", "scramble_train")
+
             print("Parsing twitter validation data")
             fquery_validate, freply_validate = parse_twitter_dataset(raw_data_dir, processed_validation_dir, filename="valid.txt")
     else:
@@ -299,29 +359,46 @@ if __name__ == '__main__':
         processed_validation_dir = "./data/personachat/validation"
         print("Parsing personachat training data")
         fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
+        fgenerated_train = os.path.join("generated_responses", "personachat_train_responses.txt")
+
         print("Parsing personachat validation data")
         fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
-
+    
+        if args.scramble:
+            print("Scrambling personachat dataset")
+            fquery_train, freply_train = scramble(raw_data_dir, processed_train_dir)
+	    processed_train_dir = os.path.join("data", "personachat", "scramble_train")
 
     # Path to word2vec weights
     fqword2vec = 'GoogleNews-vectors-negative300.txt'
     frword2vec = 'GoogleNews-vectors-negative300.txt'
 
-    #make sure embed and vocab file paths are correct
     raw_data_dir = "./data"
+
+    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
+    print("Generated data - negative sampling")
+    processed_generated_dir = os.path.join(raw_data_dir, "generated_responses")
+    freply_generated = "personachat_train_responses.txt"
+    process_train_file(processed_generated_dir, freply_generated, reply_max_length)
+
+    fgvocab = '%s.vocab%d'%(freply_generated, reply_max_length)
+
+    make_embedding_matrix(processed_generated_dir, freply_generated, word2vec, vec_dim, fgvocab)
+
+    #make sure embed and vocab file paths are correct
     process_train_file(processed_train_dir, fquery_train, query_max_length)
     process_train_file(processed_train_dir, freply_train, reply_max_length)
+    
 
     fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
     frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
 
-    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
+
     make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
 
-    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, frword2vec)
     make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
 
-    print("Validation")
+    print("Validation data")
     process_train_file(processed_validation_dir, fquery_validate, query_max_length)
     process_train_file(processed_validation_dir, freply_validate, reply_max_length)
 
@@ -330,4 +407,6 @@ if __name__ == '__main__':
 
     make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
     make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
+	
+
     pass
