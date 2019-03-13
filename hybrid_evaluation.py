@@ -137,8 +137,7 @@ if __name__ == '__main__':
     parser.add_argument('-additional_negative_samples', type=bool, default=False)
 
     # Evaluation
-    parser.add_argument('-reply_files', nargs='+')
-    parser.add_argument('-evaluation_checkpoint_dirs', nargs='+')
+    parser.add_argument('-evaluation_checkpoint_dir')
 
     args = parser.parse_args()
 
@@ -176,8 +175,10 @@ if __name__ == '__main__':
     # Choose ADEM or personachat validation
     if args.validation_dataset =="ADEM":
         sub_dir_validate = "validation"
+        reply_files = ["human_replies.txt", "de_replies.txt", "tfidf_replies.txt", "hred_replies.txt"]
     else:
         sub_dir_validate = "test"
+        reply_files = ["high_quality_responses.txt", "kevmemnn.txt", "language_model.txt", "random_response.txt", "seq_to_seq.txt", "tf_idf.txt"]
 
     validation_fquery = os.path.join(validation_dataset, sub_dir_validate, "queries.txt")
     validation_freply_true = os.path.join(validation_dataset, sub_dir_validate, "ground_truth.txt")
@@ -213,11 +214,8 @@ if __name__ == '__main__':
         """test"""
         experiment_folder = log_dir
 
-        checkpoint_dirs = args.evaluation_checkpoint_dirs[0].split(" ")
-        reply_files = args.reply_files[0].split(" ")
-        for checkpoint_dir in checkpoint_dirs:
 	    for reply_file in reply_files: 
-                checkpoint_dir = os.path.join(experiment_folder, checkpoint_dir)
+                checkpoint_dir = os.path.join(experiment_folder, args.checkpoint_dir)
                 print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
                 validation_freply_generated = os.path.join(validation_dataset, sub_dir_validate, reply_file)
 
