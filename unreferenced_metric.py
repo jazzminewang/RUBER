@@ -19,6 +19,8 @@ class Unreferenced():
             rmax_length,
             fqembed,
             frembed,
+            fquery,
+            freply,
             gru_num_units,
             mlp_units,
             init_learning_rate,
@@ -63,6 +65,10 @@ class Unreferenced():
         print('Loading embedding matrix')
         qembed = cPickle.load(open(fqembed, 'rb'))
         rembed = cPickle.load(open(frembed, 'rb'))
+
+        print("Loading query and reply files")
+        fquery_lines = open(fquery, "r").readlines()
+        freply_lines = open(freply, "r").readlines()
 
         config = tf.ConfigProto(allow_soft_placement = True)
         config.gpu_options.allow_growth = True
@@ -219,6 +225,20 @@ class Unreferenced():
             rsizes += neg_sizes
             query_batch += query_batch
             qsizes += qsizes
+        
+        print("First 5 query inputs indices")
+        print(query_batch[:5])
+        print("First 5 reply inputs indices")
+        print(reply_batch[:5])
+
+        print("First 2 query inputs text")
+        queries_batch = [fquery_lines[x] for x in query_batch[:3]]
+        print(queries_batch)
+
+        print("First 2 reply inputs text")
+        replies_batch = [freply_lines[x] for x in query_batch[:3]]
+        print(replies_batch)
+
         return {self.query_sizes: qsizes,
             self.query_inputs: query_batch,
             self.reply_sizes: rsizes,
