@@ -76,13 +76,13 @@ class Hybrid():
 
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
 
-    def validate_to_csv(self, checkpoint_dir, data_dir, validation_fquery, validation_freply_generated, validation_freply_true, training_fquery, qmax_length, training_freply, rmax_length, validation_dataset):
+    def validate_to_csv(self, checkpoint_dir, data_dir, validation_fquery, validation_freply_generated, validation_freply_true, training_fquery, qmax_length, training_freply, rmax_length, train_dataset, validation_dataset):
 	print("Starting validation")
         scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores \
                 = self.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, \
                     '%s.vocab%d'%(training_fquery, qmax_length),'%s.vocab%d'%(training_freply, rmax_length), checkpoint_dir)
 	
-        csv_dir = os.path.join('./results', validation_dataset, "validation", checkpoint_dir)
+        csv_dir = os.path.join('./results', checkpoint_dir, validation_dataset)
 
 	print(csv_dir)
 	reply_file_path = validation_freply_generated.split("/")
@@ -119,44 +119,14 @@ class Hybrid():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    # best logic:
-    # - dataset (ADEM, personachat, or twitter)
-    # - mode (training or validation)
-    # --reply_file (optional)
-
-    # File structure
-
-    # data
-    # -- word2vec embeddings
-    # - ADEM
-    #   - validation
-        #   - [ assorted files for validation ]
-    #   - train
-        #   - [ assorted files for training ]
-    # - personachat
-    #   - validation
-            #   - [ assorted files for validation ]
-    #   - train [RENAME]
-            #   - [ assorted files for training ]
-    # - twitter
-    #   - validation
-            #   - [ assorted files for validation ]
-    #   - train
-            #   - [ assorted files for training ]
-
     data_dir = "./data"
 
     parser.add_argument('train_dataset')
     parser.add_argument('validation_dataset')
     parser.add_argument('mode')
 
-
-    # Evaluation
-    parser.add_argument('-reply_files', nargs='+')
-    parser.add_argument('-evaluation_checkpoint_dirs', nargs='+')
-
     # Training
-    parser.add_argument('-log_dir')
+    parser.add_argument('-log_dir', default="experiments/")
 
     # Hyperparameters
     parser.add_argument('-gru_num_units', type=int)
@@ -165,6 +135,9 @@ if __name__ == '__main__':
     parser.add_argument('-batch_norm', type=bool, default=False)
     parser.add_argument('-scramble', type=bool, default=False)
     parser.add_argument('-additional_negative_samples', type=bool, default=False)
+
+    # Evaluation
+    parser.add_argument('-checkpoint_dir')
 
     args = parser.parse_args()
 
@@ -175,61 +148,52 @@ if __name__ == '__main__':
     log_dir = args.log_dir
 
     batch_norm = args.batch_norm 
-    print("batch norm is " + str(batch_norm))
     gru_num_units = args.gru_num_units
-    init_learning_rate = float(args.init_learning_rate) / 1000
-    margin = float(args.margin) / 100
-
-
-    if args.reply_files and args.checkpoint_dirs:
-        checkpoint_dirs = args.checkpoint_dirs[0].split(" ")
-        reply_files = args.reply_files[0].split(" ")
-        print("Checkpoint dirs: ")
-        print(checkpoint_dirs)
-	print("Example checkpoint dir: ")
-	print(checkpoint_dirs[0])
-        print("Reply files: ")
-	print(reply_files)
-
-    qmax_length, rmax_length = [20, 30]
-
-    print("Mode: " + args.mode)
-
-    if args.scramble:
-        sub_data = "scramble_train"
-    else:
-        sub_data = "train"
-    training_fquery = os.path.join(train_dataset, sub_data, "queries.txt")
-    training_freply = os.path.join(train_dataset, sub_data, "replies.txt")
-    validation_fquery = validation_dataset + "/validation/queries.txt"
-    if args.validation_dataset =="ADEM":
-        validation_fquery = validation_dataset + "/validation/queries.txt"
-        validation_freply_true = validation_dataset + "/validation/true.txt"
-        if reply_files:
-             validation_freply_generated = validation_dataset + "/validation/" + reply_files[0]
-        else:
-             validation_freply_generated = validation_dataset + "/validation/hred_replies.txt"
-    else:
-        #personachat validation on test set
-        validation_fquery = validation_dataset + "/test/queries.txt"
-        validation_freply_true = validation_dataset + "/test/ground_truth.txt"
-        if reply_files:
-             validation_freply_generated = validation_dataset + "/test/" + reply_files[0]
 
     if args.mode == "train":
         is_training=True
     else: 
         is_training=False
+    
+    if is_training:
+        init_learning_rate = float(args.init_learning_rate) / 1000
+        margin = float(args.margin) / 100
+    else:
+        # If evaluating, set arbitrary values
+        init_learning_rate=0.001
+        margin=0.5
+
+    # Choose scrambled or non-scrambled training set
+    if args.scramble:
+        sub_dir_train = "scramble_train"
+    else:
+        sub_dir_train = "train"
+
+    training_fquery = os.path.join(train_dataset, sub_dir_train, "queries.txt")
+    training_freply = os.path.join(train_dataset, sub_dir_train, "replies.txt")
+
+    # Choose ADEM or personachat validation
+    if args.validation_dataset =="ADEM":
+        sub_dir_validate = "validation"
+        reply_files = ["human_replies.txt", "de_replies.txt", "tfidf_replies.txt", "hred_replies.txt"]
+    else:
+        sub_dir_validate = "test"
+        reply_files = ["high_quality_responses.txt", "kevmemnn.txt", "language_model.txt", "random_response.txt", "seq_to_seq.txt", "tf_idf.txt"]
+
+    validation_fquery = os.path.join(validation_dataset, sub_dir_validate, "queries.txt")
+    validation_freply_true = os.path.join(validation_dataset, sub_dir_validate, "ground_truth.txt")
 
     """word2vec file"""
     frword2vec = 'GoogleNews-vectors-negative300.txt'
-
+    qmax_length, rmax_length = [20, 30]
+    
     if args.additional_negative_samples:
         additional_negative_samples = os.path.join("generated_responses", "personachat_train_responses.txt")
     else:
         additional_negative_samples = ''
-
+    print("Mode: " + args.mode)
     print("Initializing Hybrid object with " + training_fquery + " as training query file")
+
     hybrid = Hybrid(
         data_dir, 
         frword2vec, 
@@ -241,30 +205,28 @@ if __name__ == '__main__':
         batch_norm=batch_norm,
         is_training=is_training, 
         train_dataset=train_dataset,
-	log_dir=log_dir,
+	    log_dir=log_dir,
         scramble=args.scramble,
         additional_negative_samples=additional_negative_samples
         )
     
-    
-    """test"""
-    if args.mode == "validate":
-	print("First checkpoint dir " + checkpoint_dirs[0])
-	print("First reply file " + reply_files[0])
-        for checkpoint_dir in checkpoint_dirs:
-	    for reply_file in reply_files: 
-                print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
-		if validation_dataset == "ADEM":
-                    validation_freply_generated = os.path.join(validation_dataset, "validation", reply_file)
-                else:
-		    validation_freply_generated = os.path.join(validation_dataset, "test", reply_file)
-                hybrid.validate_to_csv(
-                    checkpoint_dir, data_dir, validation_fquery, \
-                        validation_freply_generated, validation_freply_true, \
-                            training_fquery, qmax_length, training_freply, rmax_length, validation_dataset)
+    if not is_training:
+        """test"""
+        experiment_folder = log_dir
+
+        print("reply files: ")
+        print(reply_files)
+	for reply_file in reply_files: 
+            checkpoint_dir = os.path.join(experiment_folder, args.checkpoint_dir)
+            print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
+            validation_freply_generated = os.path.join(validation_dataset, sub_dir_validate, reply_file)
+
+            hybrid.validate_to_csv(
+                checkpoint_dir, data_dir, validation_fquery, \
+                    validation_freply_generated, validation_freply_true, \
+                        training_fquery, qmax_length, training_freply, rmax_length, train_dataset, validation_dataset)
 
     else:
         """train"""
         print("Training")
-	print("Data dir is " + data_dir)
         hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)
