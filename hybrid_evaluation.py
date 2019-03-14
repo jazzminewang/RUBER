@@ -14,8 +14,8 @@ class Hybrid():
     def __init__(self,
             data_dir,
             frword2vec,
-            fqembed,
-            frembed,
+            training_fquery,
+            training_freply,
             qmax_length=20,
             rmax_length=30,
             ref_method='max_min',
@@ -34,8 +34,8 @@ class Hybrid():
         self.ref=Referenced(data_dir, frword2vec, ref_method)
         print("Initializing unreferenced model with log_dir " + log_dir + " and ref method " + ref_method)
         self.unref=Unreferenced(qmax_length, rmax_length,
-                os.path.join(data_dir,fqembed),
-                os.path.join(data_dir,frembed),
+                os.path.join(data_dir,training_fquery),
+                os.path.join(data_dir,training_freply),
                 gru_num_units=gru_num_units, 
                 mlp_units=mlp_units,
                 init_learning_rate=init_learning_rate,
@@ -197,8 +197,8 @@ if __name__ == '__main__':
     hybrid = Hybrid(
         data_dir, 
         frword2vec, 
-        '%s.embed'%training_fquery, 
-        '%s.embed'%training_freply, 
+        training_fquery, 
+        training_freply, 
         gru_num_units=gru_num_units,
         init_learning_rate=init_learning_rate,
         margin=margin,

@@ -8,6 +8,11 @@ import numpy as np
 import tensorflow as tf
 import data_helpers
 import pdb
+from bert_serving.client import BertClient
+bc = BertClient()
+
+# SEE BERT: https://github.com/kyzhouhzau/BERT-NER/blob/master/BERT_NER.py#L534
+
 
 class Unreferenced():
     """Unreferenced Metric
@@ -17,8 +22,8 @@ class Unreferenced():
     def __init__(self,
             qmax_length,
             rmax_length,
-            fqembed,
-            frembed,
+            fquery,
+            freply,
             gru_num_units,
             mlp_units,
             init_learning_rate,
@@ -36,7 +41,8 @@ class Unreferenced():
 
         Args:
             qmax_length, rmax_length: max sequence length for query and reply
-            fqembed, frembed: embedding matrix file for query and reply
+            # fqembed, frembed: embedding matrix file for query and reply
+            fquery, freply: text files for query and reply
             gru_num_units: number of units in each GRU cell
             mlp_units: number of units for mlp, a list of length T,
                 indicating the output units for each perceptron layer.
@@ -60,9 +66,12 @@ class Unreferenced():
         self.rmax_length = rmax_length
         random.seed()
 
-        print('Loading embedding matrix')
-        qembed = cPickle.load(open(fqembed, 'rb'))
-        rembed = cPickle.load(open(frembed, 'rb'))
+        # print('Loading embedding matrix')
+        # qembed = cPickle.load(open(fqembed, 'rb'))
+        # rembed = cPickle.load(open(frembed, 'rb'))
+        print("Loading query and reply files")
+        qlines = open(fquery, 'r').readlines()
+        rlines = open(freply, 'r').readlines()
 
         config = tf.ConfigProto(allow_soft_placement = True)
         config.gpu_options.allow_growth = True
@@ -72,24 +81,24 @@ class Unreferenced():
 
         with self.session.as_default():
             # build bidirectional gru rnn and get final state as embedding
-            def get_birnn_embedding(sizes, inputs, embed, scope):
-                embedding = tf.Variable(embed, dtype=tf.float32,
-                        name="embedding_matrix")
-                with tf.variable_scope('forward'):
-                    fw_cell = tf.contrib.rnn.GRUCell(gru_num_units)
-                with tf.variable_scope('backward'):
-                    bw_cell = tf.contrib.rnn.GRUCell(gru_num_units)
-                inputs = tf.nn.embedding_lookup(embedding, inputs)
-                # outputs, state_fw, state_bw
-                _, state_fw, state_bw = tf.contrib.rnn.static_bidirectional_rnn(
-                        fw_cell, bw_cell,
-                        # make inputs as [max_length, batch_size=1, vec_dim]
-                        tf.unstack(tf.transpose(inputs, perm=[1, 0, 2])),
-                        sequence_length=sizes,
-                        dtype=tf.float32,
-                        scope=scope)
-                # [batch_size, gru_num_units * 2]
-                return tf.concat([state_fw, state_bw], 1)
+            # def get_birnn_embedding(sizes, inputs, embed, scope):
+            #     embedding = tf.Variable(embed, dtype=tf.float32,
+            #             name="embedding_matrix")
+            #     with tf.variable_scope('forward'):
+            #         fw_cell = tf.contrib.rnn.GRUCell(gru_num_units)
+            #     with tf.variable_scope('backward'):
+            #         bw_cell = tf.contrib.rnn.GRUCell(gru_num_units)
+            #     inputs = tf.nn.embedding_lookup(embedding, inputs)
+            #     # outputs, state_fw, state_bw
+            #     _, state_fw, state_bw = tf.contrib.rnn.static_bidirectional_rnn(
+            #             fw_cell, bw_cell,
+            #             # make inputs as [max_length, batch_size=1, vec_dim]
+            #             tf.unstack(tf.transpose(inputs, perm=[1, 0, 2])),
+            #             sequence_length=sizes,
+            #             dtype=tf.float32,
+            #             scope=scope)
+            #     # [batch_size, gru_num_units * 2]
+            #     return tf.concat([state_fw, state_bw], 1)
 
             # query GRU bidirectional RNN
             with tf.variable_scope('query_bidirectional_rnn'):
@@ -101,9 +110,11 @@ class Unreferenced():
                         shape=[None, self.qmax_length],
                         name="query_inputs")
                 with tf.device('/gpu:1'):
-                    query_embedding = get_birnn_embedding(
-                            self.query_sizes, self.query_inputs,
-                            qembed, 'query_rgu_birnn')
+                    query_embedding = bc.encode(qlines)
+
+                    # query_embedding = get_birnn_embedding(
+                    #         self.query_sizes, self.query_inputs,
+                    #         qembed, 'query_rgu_birnn')
 
             # reply GRU bidirectional RNN
             with tf.variable_scope('reply_bidirectional_rnn'):
@@ -113,9 +124,11 @@ class Unreferenced():
                         shape=[None, self.rmax_length],
                         name="reply_inputs")
                 with tf.device('/gpu:1'):
-                    reply_embedding = get_birnn_embedding(
-                        self.reply_sizes, self.reply_inputs,
-                        rembed, 'reply_gru_birnn')
+                    reply_embedding = bc.encode(rlines)
+                    
+                    # reply_embedding = get_birnn_embedding(
+                    #     self.reply_sizes, self.reply_inputs,
+                    #     rembed, 'reply_gru_birnn')
 
             # quadratic feature as qT*M*r
             with tf.variable_scope('quadratic_feature'):
