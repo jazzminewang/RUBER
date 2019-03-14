@@ -26,8 +26,8 @@ class Hybrid():
             batch_norm=False,
             is_training=True,
             train_dataset='',
-	    log_dir="training",
-	    scramble=False,
+        log_dir="training",
+        scramble=False,
         additional_negative_samples='',
         ):
         print("Initializing referenced model")
@@ -43,7 +43,7 @@ class Hybrid():
                 is_training=is_training,
                 batch_norm=batch_norm,
                 train_dataset=train_dataset,
-		log_dir=log_dir,
+        log_dir=log_dir,
                 scramble=scramble,
                 additional_negative_samples=additional_negative_samples
                 )
@@ -53,22 +53,22 @@ class Hybrid():
         self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true)
     def normalize(self, scores, smin=None, smax=None, coefficient=None, smallest_value=0):
         if not smin and not smax:
-	    smin = min(scores)
+            smin = min(scores)
             smax = max(scores)
             diff = smax - smin
-	# normalize to [0-2] instead to fit RUBER human scores
+    # normalize to [0-2] instead to fit RUBER human scores
         else:
-	    smin = smin
-	    diff = smax - smin
+            smin = smin
+            diff = smax - smin
         if coefficient:
-		ret = [smallest_value + (coefficient * (s - smin) / diff) for s in scores]
-	else:
-	    ret = [smallest_value + ((s - smin) / diff) for s in scores]
+            ret = [smallest_value + (coefficient * (s - smin) / diff) for s in scores]
+        else:
+            ret = [smallest_value + ((s - smin) / diff) for s in scores]
         return ret
 
     def scores(self, data_dir, fquery ,freply, fgenerated, fqvocab, frvocab, checkpoint_dir):
         ref_scores = self.ref.scores(data_dir, freply, fgenerated)
-	norm_ref_scores = self.normalize(ref_scores, coefficient=4, smallest_value=1)
+        norm_ref_scores = self.normalize(ref_scores, coefficient=4, smallest_value=1)
         
         unref_scores = self.unref.scores(data_dir, fquery, fgenerated,
                 fqvocab, frvocab, checkpoint_dir, init=False)
@@ -77,22 +77,22 @@ class Hybrid():
         return [np.mean([a,b]) for a,b in zip(norm_ref_scores, norm_unref_scores)], ref_scores, norm_ref_scores, unref_scores, norm_unref_scores
 
     def validate_to_csv(self, checkpoint_dir, data_dir, validation_fquery, validation_freply_generated, validation_freply_true, training_fquery, qmax_length, training_freply, rmax_length, train_dataset, validation_dataset):
-	print("Starting validation")
+        print("Starting validation")
         scores, ref_scores, norm_ref_scores, unref_scores, norm_unref_scores \
                 = self.scores(data_dir, validation_fquery, validation_freply_true, validation_freply_generated, \
                     '%s.vocab%d'%(training_fquery, qmax_length),'%s.vocab%d'%(training_freply, rmax_length), checkpoint_dir)
-	
+    
         csv_dir = os.path.join('./results', checkpoint_dir, validation_dataset)
 
-	print(csv_dir)
-	reply_file_path = validation_freply_generated.split("/")
-	reply_file = reply_file_path[len(reply_file_path) - 1]
-	print(reply_file)
+        print(csv_dir)
+        reply_file_path = validation_freply_generated.split("/")
+        reply_file = reply_file_path[len(reply_file_path) - 1]
+        print(reply_file)
         csv_title = os.path.join(csv_dir, reply_file.rstrip(".txt") + ".csv")
-	print("Csv title: ")
-	print(csv_title)
-	if not os.path.exists(csv_dir):
-	    os.makedirs(csv_dir)
+    print("Csv title: ")
+    print(csv_title)
+    if not os.path.exists(csv_dir):
+        os.makedirs(csv_dir)
         
         """write results to CSV"""
         with open(csv_title, 'w+') as csvfile:
@@ -205,7 +205,7 @@ if __name__ == '__main__':
         batch_norm=batch_norm,
         is_training=is_training, 
         train_dataset=train_dataset,
-	    log_dir=log_dir,
+        log_dir=log_dir,
         scramble=args.scramble,
         additional_negative_samples=additional_negative_samples
         )
@@ -216,7 +216,7 @@ if __name__ == '__main__':
 
         print("reply files: ")
         print(reply_files)
-	for reply_file in reply_files: 
+    for reply_file in reply_files: 
             checkpoint_dir = os.path.join(experiment_folder, args.checkpoint_dir)
             print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
             validation_freply_generated = os.path.join(validation_dataset, sub_dir_validate, reply_file)
