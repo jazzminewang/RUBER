@@ -1,7 +1,4 @@
 declare -a gru_num_units=(64 128 256 512)
-declare -a ADEM_reply_files=("human_replies.txt" "de_replies.txt" "tfidf_replies.txt" "hred_replies.txt")
-declare -a personachat_reply_files=("high_quality_responses.txt" "kevmemnn.txt" "language_model.txt" "random_response.txt" "seq_to_seq.txt" "tf_idf.txt")
-echo "ok"
 # Get all checkpoint dirs with twitter in the name, put in array
 cd experiments
 twitter_checkpoints=($(find -name \*twitter*))
@@ -23,13 +20,17 @@ do
 
                 tmux new-session -d -s $session \; \
                     send-keys "conda activate RUBER" Enter \; \
-                    send-keys "python hybrid_evaluation.py twitter ADEM validate -gru_num_units=${gru_num_unit} -init_learning_rate=1 -margin=50 -batch_norm=True \
-				-checkpoint_dirs=["$item"] -reply_files="${ADEM_reply_files}"" Enter
+                    send-keys "python hybrid_evaluation.py twitter ADEM validate -gru_num_units=${gru_num_unit} -init_learning_rate=1 -margin=50 -batch_norm=True -checkpoint_dir="$item"" Enter
+                tmux new-session -d -s p_$session \; \
+                    send-keys "conda activate RUBER" Enter \; \
+                    send-keys "python hybrid_evaluation.py twitter personachat validate -gru_num_units=${gru_num_unit} -init_learning_rate=1 -margin=50 -batch_norm=True -checkpoint_dir="$item"" Enter
             else
                 tmux new-session -d -s $session \; \
                     send-keys "conda activate RUBER" Enter \; \
-                    send-keys "python hybrid_evaluation.py twitter ADEM validate -gru_num_units=${gru_num_unit} -init_learning_rate=1 -margin=50 \
-				-checkpoint_dirs=["$item"] -reply_files="${ADEM_reply_files}"" Enter
+                    send-keys "python hybrid_evaluation.py twitter ADEM validate -gru_num_units=${gru_num_unit} -init_learning_rate=1 -margin=50 -checkpoint_dir="$item"" Enter
+		tmux new-session -d -s p_$session \; \
+                    send-keys "conda activate RUBER" Enter \; \
+                    send-keys "python hybrid_evaluation.py twitter personachat validate -gru_num_units=${gru_num_unit} -init_learning_rate=1 -margin=50 -checkpoint_dir="$item"" Enter
             fi
         fi
     done

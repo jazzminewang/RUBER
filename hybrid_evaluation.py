@@ -137,7 +137,7 @@ if __name__ == '__main__':
     parser.add_argument('-additional_negative_samples', type=bool, default=False)
 
     # Evaluation
-    parser.add_argument('-evaluation_checkpoint_dir')
+    parser.add_argument('-checkpoint_dir')
 
     args = parser.parse_args()
 
@@ -214,16 +214,17 @@ if __name__ == '__main__':
         """test"""
         experiment_folder = log_dir
 
-	    for reply_file in reply_files: 
-                checkpoint_dir = os.path.join(experiment_folder, args.checkpoint_dir)
-                print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
-                validation_freply_generated = os.path.join(validation_dataset, sub_dir_validate, reply_file)
+        print("reply files: ")
+        print(reply_files)
+	for reply_file in reply_files: 
+            checkpoint_dir = os.path.join(experiment_folder, args.checkpoint_dir)
+            print("Validating " + checkpoint_dir + " model with " + reply_file + " replies.")
+            validation_freply_generated = os.path.join(validation_dataset, sub_dir_validate, reply_file)
 
-            #TODO: add path for where the CSVs will be written to
-                hybrid.validate_to_csv(
-                    checkpoint_dir, data_dir, validation_fquery, \
-                        validation_freply_generated, validation_freply_true, \
-                            training_fquery, qmax_length, training_freply, rmax_length, train_dataset, validation_dataset)
+            hybrid.validate_to_csv(
+                checkpoint_dir, data_dir, validation_fquery, \
+                    validation_freply_generated, validation_freply_true, \
+                        training_fquery, qmax_length, training_freply, rmax_length, train_dataset, validation_dataset)
 
     else:
         """train"""
