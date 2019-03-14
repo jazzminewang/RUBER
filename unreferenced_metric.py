@@ -106,9 +106,10 @@ class Unreferenced():
                         # batch_size
                         shape=[None], name="query_sizes")
                 self.query_inputs = tf.placeholder(tf.int32,
-                        # [batch_size, sequence_length]
+                        # [indices, sequence_length]
                         shape=[None, self.qmax_length],
                         name="query_inputs")
+
                 with tf.device('/gpu:1'):
                     query_embedding = bc.encode(qlines)
 
@@ -125,7 +126,7 @@ class Unreferenced():
                         name="reply_inputs")
                 with tf.device('/gpu:1'):
                     reply_embedding = bc.encode(rlines)
-                    
+
                     # reply_embedding = get_birnn_embedding(
                     #     self.reply_sizes, self.reply_inputs,
                     #     rembed, 'reply_gru_birnn')
@@ -232,6 +233,7 @@ class Unreferenced():
             rsizes += neg_sizes
             query_batch += query_batch
             qsizes += qsizes
+        
         return {self.query_sizes: qsizes,
             self.query_inputs: query_batch,
             self.reply_sizes: rsizes,
