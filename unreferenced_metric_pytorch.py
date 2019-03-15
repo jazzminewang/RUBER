@@ -8,7 +8,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import cPickle
 import os
 import data_helpers
-
+import gensim
 
 def get_mlp(input_dim, output_dim, num_layers=2, dropout=0.0):
     network_list = []
@@ -24,28 +24,29 @@ def get_mlp(input_dim, output_dim, num_layers=2, dropout=0.0):
     )
 
 class BiRNNEmbedding(nn.Module):
-  def __init__(self, input_dim, output_dim, inputs_length, inputs_indices, num_layers=2, num_words=10, num_dim=100, pooling=None):
-    super(BiRNNEmbedding, self).__init__()
-    # self.embedding = nn.Embedding.from_pretrained
-    #TODO: load shit into BIRNN (specific qembed, look into nn.embedding)
-    torch.nn.init.xavier_uniform_(self.embedding.weight)
+    def __init__(self, input_dim, output_dim, fembed, num_layers=2, num_words=10, num_dim=100, pooling=None):
+        super(BiRNNEmbedding, self).__init__()
+        self.embedding = nn.Embedding(fembed)
+        torch.nn.init.xavier_uniform_(self.embedding.weight)
 
-    self.rnn = nn.GRU(input_dim, output_dim,num_layers=num_layers, bidirectional=True, batch_first=True)
-    self.pooling = None
-    
-  def forward(self, data, inp_len):
-    data = self.embedding(data)
-    data_pack = pack_padded_sequence(data, inp_len, batch_first=True)
-    outp, hidden_rep = self.rnn(data_pack)
-    outp, _ = pad_packed_sequence(outp, batch_first=True)
-    outp = outp.contiguous()
-    # pooling
-    if self.pooling:
-      raise NotImplementedError("pooling yet not implemented")
-    else:
-      outp = outp[:,-1,:]
-    
-    return outp
+        self.rnn = nn.GRU(input_dim, output_dim,num_layers=num_layers, bidirectional=True, batch_first=True)
+        self.pooling = None
+        
+    def forward(self, data, inp_len):
+        data = self.embedding(data)
+        data_pack = pack_padded_sequence(data, inp_len, batch_first=True)
+        outp, hidden_rep = self.rnn(data_pack)
+        outp, _ = pad_packed_sequence(outp, batch_first=True)
+        outp = outp.contiguous()
+        # pooling
+        if self.pooling:
+        raise NotImplementedError("pooling yet not implemented")
+        else:
+        outp = outp[:,-1,:]
+        
+        return outp
+
+    # do I need a train method here?
 
 class UnreferencedMetric(nn.Module):
     def __init__(self, qmax_length,
@@ -99,15 +100,17 @@ class UnreferencedMetric(nn.Module):
 
         self.qmax_length = qmax_length
         self.rmax_length = rmax_length
+
         self.queryGRU = BiRNNEmbedding(emb_dim,emb_dim,num_words=vocab_size, num_dim=emb_dim)
         self.replyGRU = BiRNNEmbedding(emb_dim,emb_dim,num_words=10, num_dim=emb_dim)
         self.quadratic_M = nn.Parameter(torch.zeros((emb_dim * 2,emb_dim * 2)))
 
         self.mlp = get_mlp((emb_dim * 4 + 1),1,2)
     
-    def forward(self, query, query_length, reply, reply_length):
-        qout = self.queryGRU(query, query_length) # B x dim * 2
-        rout = self.replyGRU(reply, reply_length) # B x dim * 2
+    def forward(self, query_batch, query_length, reply_batch, reply_length):
+        qout = self.queryGRU(query_batch, query_length) # B x dim * 2
+        rout = self.replyGRU(reply_batch, reply_length) # B x dim * 2
+
         qTM = torch.tensordot(qout, self.quadratic_M, dims=1) # B x dim * 2
         quadratic = qTM.mul(rout).sum(1).unsqueeze(1) # B x 1
         xin = torch.cat([qout, rout, quadratic],dim=1)
@@ -115,6 +118,22 @@ class UnreferencedMetric(nn.Module):
         out = self.mlp(xin) # B x (dim * 4 + 1)
         # out = B x 1
         return out
+
     
+    def train(args, model, device, train_loader, optimizer, epoch):
+        model.train()
+        for batch_idx, (data, target) in enumerate(train_loader):
+            data, target = data.to(device), target.to(device)
+            optimizer.zero_grad()
+            output = model(data)
+            loss = F.nll_loss(output, target)
+            loss.backward()
+            optimizer.step()
+            if batch_idx % args.log_interval == 0:
+                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                    epoch, batch_idx * len(data), len(train_loader.dataset),
+                        100. * batch_idx / len(train_loader), loss.item()))
+
     
-    um = UnreferencedMetric(10,10,None,None,2,2,emb_dim=10, vocab_size=10)
+    # TODO: add this to hybrid
+    # um = UnreferencedMetric(10,10,None,None,2,2,emb_dim=10, vocab_size=10)
