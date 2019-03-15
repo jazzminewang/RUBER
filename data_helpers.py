@@ -356,7 +356,7 @@ if __name__ == '__main__':
     else:
         raw_data_dir = './data/personachat'
         processed_train_dir = "./data/personachat/train/"
-        processed_validation_dir = "./data/personachat/validation"
+        processed_validation_dir = "./data/personachat/test"
         print("Parsing personachat training data")
         fquery_train, freply_train = parse_persona_chat_dataset(raw_data_dir, processed_train_dir)
         fgenerated_train = os.path.join("generated_responses", "personachat_train_responses.txt")
@@ -400,13 +400,15 @@ if __name__ == '__main__':
 
     print("Validation data")
     process_train_file(processed_validation_dir, fquery_validate, query_max_length)
-    process_train_file(processed_validation_dir, freply_validate, reply_max_length)
 
     fqvocab = '%s.vocab%d'%(fquery_validate, query_max_length)
-    frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
 
     make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
-    make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
-	
+    
+    for freply_validate in os.listdir(processed_validation_dir):
+        print("Creating files for " + freply_validate)
+        process_train_file(processed_validation_dir, freply_validate, reply_max_length)
+        frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
+        make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
 
     pass

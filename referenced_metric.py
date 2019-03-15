@@ -32,19 +32,17 @@ class Referenced():
         return [1e-10 for _ in xrange(self.vec_dim)]
 
     def __vector(self, word):
-	if word in self.word2vec:
-	    return self.word2vec[word]
-	else:
-	    print("Word2vec does not contain " + word)
-	    return self.__zeroes_vector()
+        if word in self.word2vec:
+            return self.word2vec[word]
+        else:
+            print("Word2vec does not contain " + word)
+            return self.__zeroes_vector()
     
     def sentence_vector(self, sentence):
         sentence = sentence.rstrip().split()
-	table = string.maketrans("", "")
+        table = string.maketrans("", "")
         ret = [self.__vector(word.translate(table, string.punctuation)) for word in sentence]
         if len(ret) == 0:
-	    print(sentence)		
-	    print(" does not have ret array")
             return [self.__zeroes_vector()]
         return ret
 
@@ -70,15 +68,15 @@ class Referenced():
         v2=list(self.pooling(generated))
         #a=sum(v1[i]*v2[i] for i in range(len(v1)))
         #b=math.sqrt(sum(i**2 for i in v1)) * math.sqrt(sum(i**2 for i in v2))
-	#print("a/b is " + str(a/b))
-	#print("cosine library is " + str(sp.spatial.distance.cosine(v1, v2)))
+        print("a/b is " + str(a/b))
+        print("cosine library is " + str(sp.spatial.distance.cosine(v1, v2)))
         #return a/b
-	return sp.spatial.distance.cosine(v1, v2)
+        return sp.spatial.distance.cosine(v1, v2)
     def scores(self, data_dir, fgroundtruth, fgenerated, train_dir=None):
-	if train_dir:
+        if train_dir:
             groundtruth = data_helpers.load_file(train_dir, fgroundtruth)
             generated = data_helpers.load_file(train_dir, fgenerated)
-	else:
+        else:
             groundtruth = data_helpers.load_file(data_dir, fgroundtruth)
             generated = data_helpers.load_file(data_dir, fgenerated)
         ret = []

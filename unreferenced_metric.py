@@ -44,7 +44,7 @@ class Unreferenced():
                 indicating the output units for each perceptron layer.
                 No need to specify the output layer size 1.
         """
-        # initialize varialbes
+        # initialize varialbey
 	print("Log dir is ")
 	print(log_dir)
         if batch_norm:
@@ -67,8 +67,8 @@ class Unreferenced():
         rembed = cPickle.load(open(frembed, 'rb'))
 
         print("Loading query and reply files")
-        fquery_lines = open(fquery, "r").readlines()
-        freply_lines = open(freply, "r").readlines()
+        self.fquery_lines = open(fquery, "r").readlines()
+        self.freply_lines = open(freply, "r").readlines()
 
         config = tf.ConfigProto(allow_soft_placement = True)
         config.gpu_options.allow_growth = True
@@ -230,13 +230,22 @@ class Unreferenced():
         print(query_batch[:5])
         print("First 5 reply inputs indices")
         print(reply_batch[:5])
+        
+        print("qsizes")
+        print(qsizes)
+        print("rsizes")
+        print(rsizes)
 
-        print("First 2 query inputs text")
-        queries_batch = [fquery_lines[x] for x in query_batch[:3]]
+        print("First query inputs text")
+        queries_batch = [self.fquery_lines[x] for x in query_batch[0]]
+        print("len of queries batch")
+        print(len(queries_batch))
         print(queries_batch)
 
-        print("First 2 reply inputs text")
-        replies_batch = [freply_lines[x] for x in query_batch[:3]]
+        print("First reply inputs text")
+        replies_batch = [self.freply_lines[x] for x in query_batch[0]]
+        print("len of replies batch")
+        print(len(replies_batch))
         print(replies_batch)
 
         return {self.query_sizes: qsizes,
@@ -264,8 +273,11 @@ class Unreferenced():
 
     def train_step(self, queries, replies, data_size, batch_size, generated_responses=None):
 
+        print("first query idx")
+          
         # data_size = # of queries
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
+        print(idx[0])
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
 
