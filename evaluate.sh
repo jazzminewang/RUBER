@@ -40,6 +40,7 @@ done
 for item in ${personachat_checkpoints[*]}
 do
     item=${item#"$prefix"}
+    session="${item//./}"
     for gru_num_unit in ${gru_num_units[@]}
     do
         if [[ $item == *$gru_num_unit*  ]]; then
