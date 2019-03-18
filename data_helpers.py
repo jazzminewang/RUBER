@@ -293,8 +293,8 @@ def randomize(lines, proportion):
             if random.randint(0, proportion) == 1:
                 rand_line = lines[random.randint(0, len(lines))-1].split()
                 if rand_line:
-                            rand_word = rand_line[random.randint(0, len(rand_line)-1)]
-                            word = rand_word
+                    rand_word = rand_line[random.randint(0, len(rand_line)-1)]
+                    word = rand_word
     new_line.append(word)
     string_line =" ".join(str(x) for x in new_line)
     new_lines.append(string_line) 
