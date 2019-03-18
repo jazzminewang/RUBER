@@ -200,7 +200,7 @@ if __name__ == '__main__':
         is_training=is_training, 
         train_dataset=train_dataset,
 	    log_dir=log_dir,
-        scramble=args.scramble,
+        #scramble=args.scramble,
         additional_negative_samples=additional_negative_samples
         )
     
