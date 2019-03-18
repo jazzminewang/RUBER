@@ -48,9 +48,9 @@ class Hybrid():
                 additional_negative_samples=additional_negative_samples
                 )
 
-    def train_unref(self, data_dir, fquery, freply, freply_scrambled, validation_fquery, validation_freply_true):
+    def train_unref(self, data_dir, fquery, freply, validation_fquery, validation_freply_true):
         print("training unreferenced metric")
-        self.unref.train(data_dir, fquery, freply, freply_scrambled, validation_fquery, validation_freply_true)
+        self.unref.train(data_dir, fquery, freply, validation_fquery, validation_freply_true)
     def normalize(self, scores, smin=None, smax=None, coefficient=None, smallest_value=0):
         if not smin and not smax:
 	    smin = min(scores)
@@ -164,7 +164,10 @@ if __name__ == '__main__':
         margin=0.5
 
     training_fquery = os.path.join(train_dataset, "train", "queries.txt")
-    training_freply = os.path.join(train_dataset, "train", "replies.txt")
+    if args.scramble:
+        training_freply = os.path.join(train_dataset, "scramble_train", "replies.txt")
+    else:
+        training_freply = os.path.join(train_dataset, "train", "replies.txt")
 
     # Choose ADEM or personachat validation
     if args.validation_dataset =="ADEM":
@@ -223,8 +226,4 @@ if __name__ == '__main__':
     else:
         """train"""
         print("Training")
-        if args.scramble:
-            freply_scrambled = os.path.join(train_dataset, "scramble_train", "replies.txt")
-        else: 
-            freply_scrambled = None
-        hybrid.train_unref(data_dir, training_fquery, training_freply, freply_scrambled, validation_fquery, validation_freply_true)
+        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true)

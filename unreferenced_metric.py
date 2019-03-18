@@ -203,10 +203,6 @@ class Unreferenced():
         """
         if not idx:
             idx = [random.randint(0, data_size - 1) for _ in range(batch_size)]
-        print("len of data")
-        print(len(data))
-        print("list of ids")
-        print(idx)
         ids = [data[i][1] for i in idx]
         lens = [data[i][0] for i in idx]
         return ids, lens, idx
@@ -241,26 +237,18 @@ class Unreferenced():
 
         return step, loss
 
-    def train_step(self, queries, replies, replies_scrambled, data_size, batch_size, generated_responses=None):
+    def train_step(self, queries, replies, data_size, batch_size, generated_responses=None):
         # data_size = # of queries
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
 
         if not generated_responses:
-            if replies_scrambled:
-                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies_scrambled,
-                    data_size, batch_size, idx)
-            else: 
-                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
-                    data_size, batch_size, idx)
+            negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                data_size, batch_size, idx)
         else:
-            if replies_scrambled:
-                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies_scrambled,
-                    data_size, batch_size / 2, idx)
-            else: 
-                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
-                    data_size, batch_size / 2, idx)
+            negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                data_size, batch_size / 2, idx)
             # Add noisy responses from HRED models for half of the dataset
             generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
                     data_size, batch_size / 2)
@@ -298,9 +286,6 @@ class Unreferenced():
     def train(self, data_dir, fquery, freply, fquery_scrambled, validation_fquery, validation_freply_true, batch_size=128, steps_per_checkpoint=100):
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
-        if fquery_scrambled:
-            fquery_scrambled = data_helpers.load_data(data_dir, fquery_scrambled, self.rmax_length)
-           
         data_size = len(queries)
         validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)
@@ -326,7 +311,7 @@ class Unreferenced():
             prev_losses = [1.0]
             impatience = 0.0
             while True:
-                step, l = self.train_step(queries, replies, fquery_scrambled, data_size, batch_size, additional_negative_samples)
+                step, l = self.train_step(queries, replies, data_size, batch_size, additional_negative_samples)
                 _, validation_l = self.get_validation_loss(validation_queries, validation_replies,
                                                            len(validation_queries), batch_size)
 
