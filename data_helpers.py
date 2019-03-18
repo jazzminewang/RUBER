@@ -212,84 +212,90 @@ def parse_persona_chat_dataset(raw_data_dir, processed_data_dir, file_type="trai
     freply_file = Path(freply_filename)
     fquery_short = "queries.txt" 
     freply_short = "replies.txt"
-    if not fquery_file.exists() and not freply_file.exists():
-        print("Creating queries and replies dataset from personachat with context added (past three queries)")
+    print("Creating queries and replies dataset from personachat with context added (past three queries)")
         
-	for data_filename in os.listdir(raw_data_dir):
-            if file_type in data_filename and "no_cand" in data_filename and "none" in data_filename:
-                data_filename = os.path.join(raw_data_dir, data_filename)
-		print("parsing" + data_filename)
-                with open(data_filename, "r") as datafile, \
-                    open(fquery_filename, "w+") as queries, \
-                        open(freply_filename, "w+") as replies:
+    for data_filename in os.listdir(raw_data_dir):
+        if file_type in data_filename and "no_cand" in data_filename and "none" in data_filename:
+            data_filename = os.path.join(raw_data_dir, data_filename)
+            print("parsing" + data_filename)
+            with open(data_filename, "r") as datafile, \
+                open(fquery_filename, "w+") as queries, \
+                    open(freply_filename, "w+") as replies:
+                
+                lines = datafile.readlines()
+                filtered_lines = [line for line in lines if 'persona:' not in line]
+                new_conversation = True
+                context = []
 
-                    lines = datafile.readlines()
-                    filtered_lines = [line for line in lines if 'persona:' not in line]
-                    new_conversation = True
-                    context = []
+                # change to new conversation if next line is a smaller number --> omitting last line edge case
+                for x in range(0, len(filtered_lines) - 2):
+                    original = filtered_lines[x]
+                    number = int(original[:2])
+                    split = (original[2:].rstrip("\n")).split("\t")
+                    print(split)
+                    # time.sleep(1)
+                    if len(split) > 2:
+                        print(len(split))
 
-                    # change to new conversation if next line is a smaller number --> omitting last line edge case
-                    for x in range(0, len(filtered_lines) - 2):
-                        original = filtered_lines[x]
-                        number = int(original[:2])
-                        split = (original[2:]).split("\t")
-                        next_number = int(filtered_lines[x + 1][:2])
-                        
-                        if new_conversation:
-                            # add first part only as query
-                            queries.write(split[0] + get_most_recent_context(context))
+                    next_number = int(filtered_lines[x + 1][:2])
+                    
+                    if new_conversation:
+                        # add first part only as query
+                        if "__SILENCE__" not in split[0]:
+                            queries.write(split[0] + get_most_recent_context(context) + "\n")
                             context.append(split[0])
                             if len(split) > 1:
-                                replies.write(split[1])
-                                queries.write(split[1] + get_most_recent_context(context))
+                                replies.write(split[1]+ "\n")
+                                queries.write(split[1] + get_most_recent_context(context)+ "\n")
                                 context.append(split[1])
-                            new_conversation = False
-                        elif next_number < number:
-                            # next line is new conversation, so add last part as only a reply. Also, clear context.
-                            new_conversation = True
-                            if len(split) > 1:
-                                replies.write(split[0])
-                                queries.write(split[0] + get_most_recent_context(context))
-                                replies.write(split[1])
-                            else:
-                                replies.write(split[0])
-                            context = []
                         else:
-                            #write both parts as queries and replies
-                            if len(split) > 1:
-                                replies.write(split[0])
-                                queries.write(split[0]+ get_most_recent_context(context))
-                                context.append(split[0])
-                                replies.write(split[1])
-                                queries.write(split[1] + get_most_recent_context(context))
-                                context.append(split[1])
-                            else:
-                                queries.write(split[0]+ get_most_recent_context(context))
-                                replies.write(split[0])
-                                context.append(split[0])
-                    
-                    replies.write(filtered_lines[len(filtered_lines) - 1])
-                datafile.close()
-		print(fquery_filename)
-		print(freply_filename)
-                queries.close()
-                replies.close()
+                            queries.write(split[1] + get_most_recent_context(context) + "\n")
+                            context.append(split[1])
+                        new_conversation = False
+                    elif next_number < number:
+                        # next line is new conversation, so add last part as only a reply. Also, clear context.
+                        new_conversation = True
+                        if len(split) > 1:
+                            replies.write(split[0]+ "\n")
+                            queries.write(split[0] + get_most_recent_context(context)+ "\n")
+                            replies.write(split[1] + "\n")
+                        else:
+                            replies.write(split[0])
+                        context = []
+                    else:
+                        #write both parts as queries and replies
+                        if len(split) > 1:
+                            replies.write(split[0]+ "\n")
+                            queries.write(split[0]+ get_most_recent_context(context)+ "\n")
+                            context.append(split[0])
+                            replies.write(split[1]+ "\n")
+                            queries.write(split[1] + get_most_recent_context(context)+ "\n")
+                            context.append(split[1])
+                            # time.sleep(3)
+                        else:
+                            queries.write(split[0]+ get_most_recent_context(context)+ "\n")
+                            replies.write(split[0]+ "\n")
+                            context.append(split[0])
+                
+                replies.write(filtered_lines[len(filtered_lines) - 1])
+            datafile.close()
+            print(fquery_filename)
+            print(freply_filename)
+            queries.close()
+            replies.close()
     return fquery_short, freply_short
 
-def randomize(lines, proportion):
-    new_lines = []
-    for i, line in enumerate(lines):
-	new_line = []
-        for word in line.split():
-            if random.randint(0, proportion) == 1:
-
-                rand_line = lines[random.randint(0, len(lines))-1].split()
-		if rand_line:
-                    rand_word = rand_line[random.randint(0, len(rand_line)-1)]
-                    word = rand_word
-		
-
-	    new_line.append(word)
+    def randomize(lines, proportion):
+        new_lines = []
+        for i, line in enumerate(lines):
+            new_line = []
+            for word in line.split():
+                if random.randint(0, proportion) == 1:
+                    rand_line = lines[random.randint(0, len(lines))-1].split()
+                    if rand_line:
+                                rand_word = rand_line[random.randint(0, len(rand_line)-1)]
+                                word = rand_word
+        new_line.append(word)
         string_line =" ".join(str(x) for x in new_line)
         new_lines.append(string_line) 
     return new_lines
@@ -362,7 +368,7 @@ if __name__ == '__main__':
         fgenerated_train = os.path.join("generated_responses", "personachat_train_responses.txt")
 
         print("Parsing personachat validation data")
-        fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir)
+        fquery_validate, freply_validate = parse_persona_chat_dataset(raw_data_dir, processed_validation_dir, file_type="valid")
     
         if args.scramble:
             print("Scrambling personachat dataset")
@@ -370,43 +376,43 @@ if __name__ == '__main__':
 	    processed_train_dir = os.path.join("data", "personachat", "scramble_train")
 
     # Path to word2vec weights
-    fqword2vec = 'GoogleNews-vectors-negative300.txt'
-    frword2vec = 'GoogleNews-vectors-negative300.txt'
+    # fqword2vec = 'GoogleNews-vectors-negative300.txt'
+    # frword2vec = 'GoogleNews-vectors-negative300.txt'
 
-    raw_data_dir = "./data"
+    # raw_data_dir = "./data"
 
-    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
-    print("Generated data - negative sampling")
-    processed_generated_dir = os.path.join(raw_data_dir, "generated_responses")
-    freply_generated = "personachat_train_responses.txt"
-    process_train_file(processed_generated_dir, freply_generated, reply_max_length)
+    # word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
+    # print("Generated data - negative sampling")
+    # processed_generated_dir = os.path.join(raw_data_dir, "generated_responses")
+    # freply_generated = "personachat_train_responses.txt"
+    # process_train_file(processed_generated_dir, freply_generated, reply_max_length)
 
-    fgvocab = '%s.vocab%d'%(freply_generated, reply_max_length)
+    # fgvocab = '%s.vocab%d'%(freply_generated, reply_max_length)
 
-    make_embedding_matrix(processed_generated_dir, freply_generated, word2vec, vec_dim, fgvocab)
+    # make_embedding_matrix(processed_generated_dir, freply_generated, word2vec, vec_dim, fgvocab)
 
-    #make sure embed and vocab file paths are correct
-    process_train_file(processed_train_dir, fquery_train, query_max_length)
-    process_train_file(processed_train_dir, freply_train, reply_max_length)
+    # #make sure embed and vocab file paths are correct
+    # process_train_file(processed_train_dir, fquery_train, query_max_length)
+    # process_train_file(processed_train_dir, freply_train, reply_max_length)
     
 
-    fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
-    frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
+    # fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
+    # frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
 
 
-    make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
+    # make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
 
-    make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
+    # make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
 
-    print("Validation data")
-    process_train_file(processed_validation_dir, fquery_validate, query_max_length)
-    process_train_file(processed_validation_dir, freply_validate, reply_max_length)
+    # print("Validation data")
+    # process_train_file(processed_validation_dir, fquery_validate, query_max_length)
+    # process_train_file(processed_validation_dir, freply_validate, reply_max_length)
 
-    fqvocab = '%s.vocab%d'%(fquery_validate, query_max_length)
-    frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
+    # fqvocab = '%s.vocab%d'%(fquery_validate, query_max_length)
+    # frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
 
-    make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
-    make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
+    # make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
+    # make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
 	
 
     pass
