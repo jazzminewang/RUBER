@@ -203,6 +203,10 @@ class Unreferenced():
         """
         if not idx:
             idx = [random.randint(0, data_size - 1) for _ in range(batch_size)]
+        print("len of data")
+        print(len(data))
+        print("list of ids")
+        print(idx)
         ids = [data[i][1] for i in idx]
         lens = [data[i][0] for i in idx]
         return ids, lens, idx
@@ -246,17 +250,17 @@ class Unreferenced():
         if not generated_responses:
             if replies_scrambled:
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies_scrambled,
-                    data_size, batch_size)
+                    data_size, batch_size, idx)
             else: 
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
-                    data_size, batch_size)
+                    data_size, batch_size, idx)
         else:
             if replies_scrambled:
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies_scrambled,
-                    data_size, batch_size / 2)
+                    data_size, batch_size / 2, idx)
             else: 
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
-                    data_size, batch_size / 2)
+                    data_size, batch_size / 2, idx)
             # Add noisy responses from HRED models for half of the dataset
             generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
                     data_size, batch_size / 2)
@@ -296,6 +300,7 @@ class Unreferenced():
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
         if fquery_scrambled:
             fquery_scrambled = data_helpers.load_data(data_dir, fquery_scrambled, self.rmax_length)
+           
         data_size = len(queries)
         validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)

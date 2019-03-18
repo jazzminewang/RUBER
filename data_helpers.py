@@ -1,4 +1,4 @@
-__author__ = 'liming-vie'
+a_author__ = 'liming-vie'
 
 import os
 import cPickle
@@ -295,9 +295,11 @@ def randomize(lines, proportion):
                 if rand_line:
                     rand_word = rand_line[random.randint(0, len(rand_line)-1)]
                     word = rand_word
-    new_line.append(word)
-    string_line =" ".join(str(x) for x in new_line)
-    new_lines.append(string_line) 
+            new_line.append(word)
+        string_line =" ".join(str(x) for x in new_line)
+        print(string_line)
+        new_lines.append(string_line) 
+    print("Randomized " + str(len(new_lines)))
     return new_lines
     
 

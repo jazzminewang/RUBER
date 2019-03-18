@@ -2,7 +2,7 @@
 
 declare -a gru_num_units=(64 128 256 512)
 declare -a init_learning_rate=(1 10 15 100 150) #(/1000)
-declare -a margins=(10 25 50 75) #(/100)
+declare -a margins=(50) #(/100)
 
 # stuff
 echo before for lop
@@ -30,16 +30,16 @@ do
 
             tmux new-session -d -s twitter_gru_${gru_num_unit}_learning_${init_learning_rate}_margin_${margin}_batchnorm \; \
                 send-keys "conda activate RUBER" \; \
-                send-keys "python hybrid_evaluation.py twitter twitter train -gru_num_units=${gru_num_unit} -init_learning_rate=${init_learning_rate} -margin=${margin} -batch_norm=True" \; \
+                send-keys "python hybrid_evaluation.py twitter ADEM train -gru_num_units=${gru_num_unit} -init_learning_rate=${init_learning_rate} -margin=${margin} -batch_norm=True" \; \
 
             tmux new-session -d -s twitter_gru_${gru_num_unit}_learning_${init_learning_rate}_margin_${margin}_batchnorm \; \
                 send-keys "conda activate RUBER" \; \
-                send-keys "python hybrid_evaluation.py twitter twitter train -gru_num_units=${gru_num_unit} \
+                send-keys "python hybrid_evaluation.py twitter ADEM train -gru_num_units=${gru_num_unit} \
                 -init_learning_rate=${init_learning_rate} -margin=${margin} -batch_norm=True -scramble=True" \; \
 
             tmux new-session -d -s twitter_gru_${gru_num_unit}_learning_${init_learning_rate}_margin_${margin}_batchnorm \; \
                 send-keys "conda activate RUBER" \; \
-                send-keys "python hybrid_evaluation.py twitter twitter train -gru_num_units=${gru_num_unit} \
+                send-keys "python hybrid_evaluation.py twitter ADEM train -gru_num_units=${gru_num_unit} \
                 -init_learning_rate=${init_learning_rate} -margin=${margin} -batch_norm=True -scramble=True -additional_negative_samples=True" \; \
 
 
