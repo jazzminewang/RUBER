@@ -376,43 +376,43 @@ if __name__ == '__main__':
 	    processed_train_dir = os.path.join("data", "personachat", "scramble_train")
 
     # Path to word2vec weights
-    # fqword2vec = 'GoogleNews-vectors-negative300.txt'
-    # frword2vec = 'GoogleNews-vectors-negative300.txt'
+    fqword2vec = 'GoogleNews-vectors-negative300.txt'
+    frword2vec = 'GoogleNews-vectors-negative300.txt'
 
-    # raw_data_dir = "./data"
+    raw_data_dir = "./data"
 
-    # word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
-    # print("Generated data - negative sampling")
-    # processed_generated_dir = os.path.join(raw_data_dir, "generated_responses")
-    # freply_generated = "personachat_train_responses.txt"
-    # process_train_file(processed_generated_dir, freply_generated, reply_max_length)
+    word2vec, vec_dim, _ = load_word2vec(raw_data_dir, fqword2vec)
+    print("Generated data - negative sampling")
+    processed_generated_dir = os.path.join(raw_data_dir, "generated_responses")
+    freply_generated = "personachat_train_responses.txt"
+    process_train_file(processed_generated_dir, freply_generated, reply_max_length)
 
-    # fgvocab = '%s.vocab%d'%(freply_generated, reply_max_length)
+    fgvocab = '%s.vocab%d'%(freply_generated, reply_max_length)
 
-    # make_embedding_matrix(processed_generated_dir, freply_generated, word2vec, vec_dim, fgvocab)
+    make_embedding_matrix(processed_generated_dir, freply_generated, word2vec, vec_dim, fgvocab)
 
-    # #make sure embed and vocab file paths are correct
-    # process_train_file(processed_train_dir, fquery_train, query_max_length)
-    # process_train_file(processed_train_dir, freply_train, reply_max_length)
+    #make sure embed and vocab file paths are correct
+    process_train_file(processed_train_dir, fquery_train, query_max_length)
+    process_train_file(processed_train_dir, freply_train, reply_max_length)
     
 
-    # fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
-    # frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
+    fqvocab = '%s.vocab%d'%(fquery_train, query_max_length)
+    frvocab = '%s.vocab%d'%(freply_train, reply_max_length)
 
 
-    # make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
+    make_embedding_matrix(processed_train_dir, fquery_train, word2vec, vec_dim, fqvocab)
 
-    # make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
+    make_embedding_matrix(processed_train_dir, freply_train, word2vec, vec_dim, frvocab)
 
-    # print("Validation data")
-    # process_train_file(processed_validation_dir, fquery_validate, query_max_length)
-    # process_train_file(processed_validation_dir, freply_validate, reply_max_length)
+    print("Validation data")
+    process_train_file(processed_validation_dir, fquery_validate, query_max_length)
+    process_train_file(processed_validation_dir, freply_validate, reply_max_length)
 
-    # fqvocab = '%s.vocab%d'%(fquery_validate, query_max_length)
-    # frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
+    fqvocab = '%s.vocab%d'%(fquery_validate, query_max_length)
+    frvocab = '%s.vocab%d'%(freply_validate, reply_max_length)
 
-    # make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
-    # make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
+    make_embedding_matrix(processed_validation_dir, fquery_validate, word2vec, vec_dim, fqvocab)
+    make_embedding_matrix(processed_validation_dir, freply_validate, word2vec, vec_dim, frvocab)
 	
 
     pass
