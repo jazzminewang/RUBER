@@ -282,7 +282,7 @@ class Unreferenced():
             checkpoint_dir = self.train_dir            
 
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
-	    print("Loading checkpoint from training dir: " + checkpoint_dir)
+	print("Loading checkpoint from training dir: " + checkpoint_dir)
 
         if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
             print ('Restoring model from %s'%ckpt.model_checkpoint_path)

@@ -298,7 +298,7 @@ def randomize(lines, proportion):
     new_line.append(word)
     string_line =" ".join(str(x) for x in new_line)
     new_lines.append(string_line) 
-return new_lines
+    return new_lines
     
 
 def scramble(raw_data_dir, processed_data_dir):
