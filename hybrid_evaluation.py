@@ -26,8 +26,9 @@ class Hybrid():
             batch_norm=False,
             is_training=True,
             train_dataset='',
-	    log_dir="training",
-        additional_negative_samples='',
+	        log_dir="training",
+            scramble=False,
+            additional_negative_samples='',
         ):
         print("Initializing referenced model")
         self.ref=Referenced(data_dir, frword2vec, ref_method)
@@ -42,7 +43,8 @@ class Hybrid():
                 is_training=is_training,
                 batch_norm=batch_norm,
                 train_dataset=train_dataset,
-		log_dir=log_dir,
+		        log_dir=log_dir,
+                scramble=scramble,
                 additional_negative_samples=additional_negative_samples
                 )
 
@@ -198,6 +200,7 @@ if __name__ == '__main__':
         is_training=is_training, 
         train_dataset=train_dataset,
 	    log_dir=log_dir,
+        scramble=args.scramble,
         additional_negative_samples=additional_negative_samples
         )
     
