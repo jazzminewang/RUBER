@@ -245,21 +245,29 @@ class Unreferenced():
 
         if not generated_responses:
             if scramble_replies:
+                print("Getting scrambled replies, no generated")
+                print(batch_size)
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(scramble_replies,
                     data_size, batch_size, idx)
             else:
-                print("Getting batch normally of size: ")
+                print("Getting normal replies, no generated")
                 print(batch_size)
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                     data_size, batch_size)
         else:
             if scramble_replies:
+                print("Getting scrambled replies + generated")
+                print(batch_size/2)
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(scramble_replies,
                     data_size, batch_size/2, idx)
             else:
+                print("Getting normal + generated")
+                print(batch_size/2)
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                     data_size, batch_size/2)
             # Add noisy responses from HRED models for half of the dataset
+            print("Getting generated replies")
+            print(batch_size/2)
             generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
                     data_size, batch_size / 2)
             negative_reply_batch += generated_reply_batch
@@ -298,11 +306,15 @@ class Unreferenced():
         print(batch_size)
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
+        print("length of replies")
+        print(len(replies))
         data_size = len(queries)
         validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)
         if scramble_replies != '':
-            scramble_replies = data_helpers.load_data(data_dir, freply_scramble, self.rmax_length)
+            scramble_replies = data_helpers.load_data(data_dir, scramble_replies, self.rmax_length)
+            print("length of scramble replies")
+            print(len(scramble_replies))
 	print("Writing validation + loss to " + self.train_dir)
         if self.additional_negative_samples:
             print("Adding additional samples")
