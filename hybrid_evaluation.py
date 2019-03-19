@@ -27,12 +27,11 @@ class Hybrid():
             is_training=True,
             train_dataset='',
 	    log_dir="training",
-	    # scramble=False,
         additional_negative_samples='',
         ):
         print("Initializing referenced model")
         self.ref=Referenced(data_dir, frword2vec, ref_method)
-        print("Initializing unreferenced model with log_dir " + log_dir + " and ref method " + ref_method)
+        print("Initializing unreferenced model with log_dir " + log_dir + " and additional samples: " + additional_negative_samples)
         self.unref=Unreferenced(qmax_length, rmax_length,
                 os.path.join(data_dir,fqembed),
                 os.path.join(data_dir,frembed),
@@ -44,7 +43,6 @@ class Hybrid():
                 batch_norm=batch_norm,
                 train_dataset=train_dataset,
 		log_dir=log_dir,
-                # scramble=scramble,
                 additional_negative_samples=additional_negative_samples
                 )
 
@@ -200,7 +198,6 @@ if __name__ == '__main__':
         is_training=is_training, 
         train_dataset=train_dataset,
 	    log_dir=log_dir,
-        #scramble=args.scramble,
         additional_negative_samples=additional_negative_samples
         )
     
@@ -224,7 +221,10 @@ if __name__ == '__main__':
         """train"""
         print("Training")
         if args.scramble:
+            print("Setting freply_scramble file")
             freply_scramble = os.path.join(train_dataset, "scramble_train", "replies.txt")
         else:
+            print("Not scrambling")
             freply_scramble = ''
+        
         hybrid.train_unref(data_dir, training_fquery, training_freply, freply_scramble, validation_fquery, validation_freply_true)
