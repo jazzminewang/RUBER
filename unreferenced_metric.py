@@ -245,11 +245,44 @@ class Unreferenced():
 
         return step, loss
 
-    def train_step(self, queries, replies, data_size, batch_size, generated_responses=None, scramble=False):
+    def train_step(self, queries, replies, fquery, freply, data_size, batch_size, generated_responses=None, add_neg_file=None, scramble=False):
         # data_size = # of queries
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
+
+        print("Loading query and reply files")
+        self.fquery_lines = open(fquery, "r").readlines()
+        self.freply_lines = open(freply, "r").readlines()
+        if generated_responses:
+            self.freply_lines_generated = open(add_neg_file, "r").readlines()
+
+        
+        print("First 5 query inputs indices")
+        print(query_batch[:5])
+        print("First 5 reply inputs indices")
+        print(reply_batch[:5])
+        print("-----")
+
+        print("qsizes")
+        print(qsizes)
+        print("rsizes")
+        print(rsizes)
+        print("-----")
+
+        print("First query inputs text")
+        queries_batch = [self.fquery_lines[x] for x in query_batch[0]]
+        print("len of queries batch")
+        print(len(queries_batch))
+        print(queries_batch)
+        print("-----")
+
+        print("First reply inputs text")
+        replies_batch = [self.freply_lines[x] for x in query_batch[0]]
+        print("len of replies batch")
+        print(len(replies_batch))
+        print(replies_batch)
+        print("-----")
 
         if not generated_responses:
             negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
@@ -259,11 +292,26 @@ class Unreferenced():
             negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                 data_size, batch_size/2, idx[:half], scramble)
             # Add noisy responses from HRED models for half of the dataset
-            generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
+            generated_reply_batch, generated_reply_sizes, _ = self.get_batch(generated_responses,
                     data_size, batch_size / 2, idx[half:])
             negative_reply_batch += generated_reply_batch
             neg_reply_sizes += generated_reply_sizes
-       
+
+        print("First negative reply inputs text")
+        negative_replies_batch = [self.freply_lines[x] for x in negative_reply_batch[0]]
+        print("len of replies batch")
+        print(len(negative_replies_batch))
+        print(negative_replies_batch)
+        print("-----")
+
+        print("First negative reply inputs text")
+        negative_replies_batch = [self.freply_lines_generated[x] for x in generated_responses[0]]
+        print("len of replies batch")
+        print(len(negative_replies_batch))
+        print(negative_replies_batch)
+        print("-----")
+
+
 
         # compute sample loss and do optimize
         feed_dict = self.make_input_feed(query_batch, query_sizes,
@@ -302,6 +350,7 @@ class Unreferenced():
 	print("Writing validation + loss to " + self.train_dir)
         if self.additional_negative_samples:
             print("Adding additional samples")
+            neg_file = self.additional_negative_samples
             additional_negative_samples = data_helpers.load_data(data_dir, self.additional_negative_samples, self.rmax_length)
         else:
             additional_negative_samples = ''
@@ -321,7 +370,7 @@ class Unreferenced():
             prev_losses = [1.0]
             impatience = 0.0
             while True:
-                step, l = self.train_step(queries, replies, data_size, batch_size, additional_negative_samples, scramble)
+                step, l = self.train_step(queries, replies, fquery, freply, data_size, batch_size, additional_negative_samples_id, add_neg_file=neg_file, scramble)
                 _, validation_l = self.get_validation_loss(validation_queries, validation_replies,
                                                            len(validation_queries), batch_size)
 
