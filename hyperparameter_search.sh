@@ -61,16 +61,16 @@ do
 
             tmux new-session -d -s twitter_gru_${gru_num_unit}_learning_${init_learning_rate}_margin_${margin} \; \
                 send-keys "conda activate RUBER" \; \
-                send-keys "python hybrid_evaluation.py twitter twitter train -gru_num_units=${gru_num_unit} -init_learning_rate=${init_learning_rate} -margin=${margin}" 
+                send-keys "python hybrid_evaluation.py twitter ADEM train -gru_num_units=${gru_num_unit} -init_learning_rate=${init_learning_rate} -margin=${margin}" 
 
             tmux new-session -d -s twitter_gru_${gru_num_unit}_learning_${init_learning_rate}_margin_${margin} \; \
                 send-keys "conda activate RUBER" \; \
-                send-keys "python hybrid_evaluation.py twitter twitter train -gru_num_units=${gru_num_unit} \
+                send-keys "python hybrid_evaluation.py twitter ADEM train -gru_num_units=${gru_num_unit} \
                 -init_learning_rate=${init_learning_rate} -margin=${margin} -scramble=True" 
             
             tmux new-session -d -s twitter_gru_${gru_num_unit}_learning_${init_learning_rate}_margin_${margin} \; \
                 send-keys "conda activate RUBER" \; \
-                send-keys "python hybrid_evaluation.py twitter twitter train -gru_num_units=${gru_num_unit} \
+                send-keys "python hybrid_evaluation.py twitter ADEM train -gru_num_units=${gru_num_unit} \
                 -init_learning_rate=${init_learning_rate} -margin=${margin} -scramble=True -additional_negative_samples=True" 
         done
     done
