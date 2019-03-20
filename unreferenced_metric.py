@@ -14,22 +14,22 @@ class Unreferenced():
     neural network
     """
     def __init__(self,
-            qmax_length,
-            rmax_length,
-            fqembed,
-            frembed,
-            gru_num_units,
-            mlp_units,
-            init_learning_rate=1e-4,
-            l2_regular=0.1,
-            margin=0.5,
-            is_training=True,
-            batch_norm=False,
-            train_dataset='',
-		    log_dir="tmp/",
-            scramble=False,
-            additional_negative_samples='',
-            ):
+                 qmax_length,
+                 rmax_length,
+                 fqembed,
+                 frembed,
+                 gru_num_units,
+                 mlp_units,
+                 init_learning_rate,
+                 l2_regular=0.1,
+                 margin=0.5,
+                 is_training=True,
+                 batch_norm=False,
+                 train_dataset='',
+                 log_dir="tmp/",
+                 scramble=False,
+                 additional_negative_samples='',
+                 ):
         """
         Initialize related variables and construct the neural network graph.
 
@@ -42,7 +42,8 @@ class Unreferenced():
                 No need to specify the output layer size 1.
         """
         # initialize varialbes
-	print("Log dir is {}, Learning rate {}".format(log_dir, init_learning_rate))
+        print("Log dir is ")
+        print(log_dir)
         if batch_norm:
             if scramble:
                 self.train_dir = os.path.join(log_dir, train_dataset + "_" + str(gru_num_units) + "_" + str(init_learning_rate) + "_" + str(margin) + "_batchnorm" + "_scramble" + additional_negative_samples.split("/")[0])
@@ -181,12 +182,12 @@ class Unreferenced():
             # global step is just a count of how many times the variables have been updated
 
             # checkpoint saver
-            self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
+            self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=3)
             # write summary
             self.log_writer = tf.summary.FileWriter(os.path.join(self.train_dir, 'logs/'), self.session.graph)
             self.summary = tf.Summary()
 
-    def get_batch(self, data, data_size, batch_size, idx=None):
+    def get_batch(self, data, data_size, batch_size, idx=None, scramble=False):
         """
         Get a random batch with size batch_size
 
@@ -203,10 +204,12 @@ class Unreferenced():
         """
         if not idx:
             idx = [random.randint(0, data_size - 1) for _ in range(batch_size)]
-        print("len of data")
-        print(len(data))
-        print("ids")
-        print(idx)
+        elif scramble:
+            new_idx = []
+            for i in idx: 
+                if random.randint(0, 4) == 1:
+                    i = random.randint(0, data_size - 1)
+                new_idx.append(i)
         
         ids = [data[i][1] for i in idx]
         lens = [data[i][0] for i in idx]
@@ -242,27 +245,19 @@ class Unreferenced():
 
         return step, loss
 
-    def train_step(self, queries, replies, scramble_replies, data_size, batch_size, generated_responses=None):
+    def train_step(self, queries, replies, data_size, batch_size, generated_responses=None, scramble=False):
         # data_size = # of queries
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
 
         if not generated_responses:
-            if scramble_replies:
-                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(scramble_replies,
-                    data_size, batch_size, idx)
-            else:
-                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
-                    data_size, batch_size)
+            negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                data_size, batch_size, idx, scramble)
         else:
             half = len(idx)/2
-            if scramble_replies:
-                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(scramble_replies,
-                    data_size, batch_size/2, idx[:half])
-            else:
-                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
-                    data_size, batch_size/2, idx[:half])
+            negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                data_size, batch_size/2, idx[:half], scramble)
             # Add noisy responses from HRED models for half of the dataset
             generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
                     data_size, batch_size / 2, idx[half:])
