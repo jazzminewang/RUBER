@@ -204,8 +204,11 @@ class Unreferenced():
         """
         if not idx:
             print("getting random ids from data of length ")
-            print(len(data_size))
+            print(data_size)
+           
             idx = [random.randint(0, data_size - 1) for _ in range(batch_size)]
+            print("random ids")
+            print(idx)
         elif scramble:
             new_idx = []
             for i in idx: 
@@ -308,11 +311,12 @@ class Unreferenced():
             # Add noisy responses from HRED models for half of the dataset
             generated_reply_batch, generated_reply_sizes, _ = self.get_batch(generated_responses,
                     data_size, batch_size / 2, idx[half:])
+            negative_reply_batch_half = negative_reply_batch
             negative_reply_batch += generated_reply_batch
             neg_reply_sizes += generated_reply_sizes
 
         print("First negative reply normal/scrambled text")
-        negative_replies_batch = [self.freply_lines[x] for x in negative_reply_batch[0]]
+        negative_replies_batch = [self.freply_lines[x] for x in negative_reply_batch_half[0]]
         print("len of replies batch")
         print(len(negative_replies_batch))
         print(negative_replies_batch)
