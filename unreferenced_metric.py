@@ -203,21 +203,23 @@ class Unreferenced():
             idx [batch_size]
         """
         if not idx:
-            print("getting random ids from data of length ")
-            print(data_size)
-           
             idx = [random.randint(0, data_size - 1) for _ in range(batch_size)]
-        elif scramble:
-            print("scrambling words")
-            new_idx = []
-            for i in idx: 
-                if random.randint(0, 4) == 1:
-                    i = random.randint(0, data_size - 1)
-                new_idx.append(i)
-            idx = new_idx
         
         ids = [data[i][1] for i in idx]
-        
+        if scramble:
+            print("Scrambling words")
+            new_idx = []
+            for sentence in ids:
+                new_sentence = []
+                for word in sentence:
+                    if random.randint(0, 4) == 1:
+                        random_divisor = random.randint(0, 4)
+                        new_word = word / random_divisor
+                        if word == 0:
+                            new_word = words
+                    new_sentence.append(new_word)
+                new_idx.append(new_sentence)
+                            
         lens = [data[i][0] for i in idx]
         return ids, lens, idx
 
@@ -266,19 +268,7 @@ class Unreferenced():
         if generated_responses:
             self.freply_lines_generated = open("data/" + add_neg_file, "r").readlines()
 
-        
-        print("First 5 query inputs indices")
-        print(query_batch[:5])
-        print("First 5 reply inputs indices")
-        print(reply_batch[:5])
-        print("-----")
-
-        print("qsizes")
-        print(query_sizes)
-        print("rsizes")
-        print(reply_sizes)
-        print("-----")
-
+    
         print("First query inputs text")
         queries_batch = [self.fquery_lines[x] for x in query_batch[0]]
         print("len of queries batch")
@@ -291,8 +281,6 @@ class Unreferenced():
         print("len of replies batch")
         print(len(replies_batch))
         print(replies_batch)
-        print("first 20 only")
-        print(replies_batch[:20])
         print("-----")
 
         if not generated_responses:
@@ -322,8 +310,6 @@ class Unreferenced():
         print("len of replies batch")
         print(len(negative_replies_batch))
         print(negative_replies_batch)
-        print("first 20 only")
-        print(negative_replies_batch[:20])
         print("-----")
 
         print("First negative reply generated text")
