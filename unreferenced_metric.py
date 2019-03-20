@@ -207,9 +207,6 @@ class Unreferenced():
         
         ids = [data[i][1] for i in idx]
         if scramble:
-            print("Scrambling words")
-            print("Before scrambling, first id index was: ")
-            print(ids[0])
             new_ids = []
             for sentence in ids:
                 new_sentence = []
@@ -219,17 +216,11 @@ class Unreferenced():
                         new_word = word / random_divisor
                         if new_word == 0:
                             new_word = word
-                        else:
-                            print("Replaced " + str(word) + " with" + str(new_word)) 
                     else:
                         new_word = word
                     new_sentence.append(new_word)
                 new_ids.append(new_sentence)
             ids = new_ids
-        print("example first id index")
-        print(ids[0])
-        print("example second id index")
-        print(ids[1])                   
         lens = [data[i][0] for i in idx]
         return ids, lens, idx
 
@@ -263,29 +254,11 @@ class Unreferenced():
 
         return step, loss
 
-    def train_step(self, queries, replies, fquery, freply, data_size, batch_size, generated_responses=None, add_neg_file=None, scramble=False):
+    def train_step(self, queries, replies, fquery, freply, data_size, batch_size, generated_responses=None, scramble=False):
         # data_size = # of queries
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
-        time.sleep(3)
-
-        print("Loading query and reply files")
-        self.fquery_lines = open("data/" + fquery + ".vocab20", "r").readlines()
-        self.freply_lines = open("data/" + freply + ".vocab30", "r").readlines()
-        if generated_responses:
-            self.freply_lines_generated = open("data/" + add_neg_file + ".vocab30", "r").readlines()
-
-    
-        print("First query inputs text")
-        queries_batch = [self.fquery_lines[x] for x in query_batch[0]]
-        print(queries_batch)
-        print("-----")
-
-        print("First positive reply inputs text")
-        replies_batch = [self.freply_lines[x] for x in reply_batch[0]]
-        print(replies_batch)
-        print("-----")
 
         if not generated_responses:
             if scramble:
@@ -308,22 +281,6 @@ class Unreferenced():
             negative_reply_batch_half = negative_reply_batch
             negative_reply_batch += generated_reply_batch
             neg_reply_sizes += generated_reply_sizes
-
-        print("First negative reply normal/scrambled text")
-        negative_replies_batch = [self.freply_lines[x] for x in negative_reply_batch_half[0]]
-        print("len of replies batch")
-        print(len(negative_replies_batch))
-        print(negative_replies_batch)
-        print("-----")
-
-        print("First negative reply generated text")
-        negative_replies_batch = [self.freply_lines_generated[x] for x in generated_reply_batch[0]]
-        print("len of replies batch")
-        print(len(negative_replies_batch))
-        print(negative_replies_batch)
-        print("-----")
-
-
 
         # compute sample loss and do optimize
         feed_dict = self.make_input_feed(query_batch, query_sizes,
@@ -382,7 +339,7 @@ class Unreferenced():
             prev_losses = [1.0]
             impatience = 0.0
             while True:
-                step, l = self.train_step(queries, replies, fquery, freply, data_size, batch_size, additional_negative_samples, add_neg_file=neg_file, scramble=scramble)
+                step, l = self.train_step(queries, replies, fquery, freply, data_size, batch_size, additional_negative_samples, scramble=scramble)
                 _, validation_l = self.get_validation_loss(validation_queries, validation_replies,
                                                            len(validation_queries), batch_size)
 
