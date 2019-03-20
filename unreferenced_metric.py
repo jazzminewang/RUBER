@@ -250,34 +250,24 @@ class Unreferenced():
 
         if not generated_responses:
             if scramble_replies:
-                print("Getting scrambled replies, no generated")
-                print(batch_size)
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(scramble_replies,
                     data_size, batch_size, idx)
             else:
-                print("Getting normal replies, no generated")
-                print(batch_size)
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
                     data_size, batch_size)
         else:
+            half = len(idx)/2
             if scramble_replies:
-                print("Getting scrambled replies + generated")
-                print(batch_size/2)
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(scramble_replies,
-                    data_size, batch_size/2, idx)
+                    data_size, batch_size/2, idx[:half])
             else:
-                print("Getting normal + generated")
-                print(batch_size/2)
                 negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
-                    data_size, batch_size/2)
+                    data_size, batch_size/2, idx[:half])
             # Add noisy responses from HRED models for half of the dataset
-            print("Getting generated replies")
-            print(batch_size/2)
             generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
-                    data_size, batch_size / 2)
+                    data_size, batch_size / 2, idx[half:])
             negative_reply_batch += generated_reply_batch
             neg_reply_sizes += generated_reply_sizes
-        print("Getting feed dict")
        
 
         # compute sample loss and do optimize
