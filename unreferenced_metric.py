@@ -6,7 +6,7 @@ import random
 import cPickle
 import tensorflow as tf
 import data_helpers
-
+import time
 
 class Unreferenced():
     """Unreferenced Metric
@@ -250,6 +250,7 @@ class Unreferenced():
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                 batch_size, idx)
+        time.sleep(3)
 
         print("Loading query and reply files")
         self.fquery_lines = open(fquery, "r").readlines()
