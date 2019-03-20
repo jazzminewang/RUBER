@@ -269,9 +269,7 @@ class Unreferenced():
         feed_dict = self.make_input_feed(query_batch, query_sizes,
                                          reply_batch, reply_sizes, negative_reply_batch, neg_reply_sizes)
 
-        print("before output feed")
         output_feed = [self.global_step, self.train_op, self.loss]
-        print("before running session")
         step, _, loss = self.session.run(output_feed, feed_dict)
         #
 

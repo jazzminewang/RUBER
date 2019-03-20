@@ -49,8 +49,8 @@ class Hybrid():
                 )
 
     def train_unref(self, data_dir, fquery, freply, freply_scramble, validation_fquery, validation_freply_true, scramble=False):
-        print("training unreferenced metric")
-        self.unref.train(data_dir, fquery, freply, freply_scramble, validation_fquery, validation_freply_true, scramble)
+        print("training unreferenced metric with scramble: " + str(scramble))
+        self.unref.train(data_dir, fquery, freply, freply_scramble, validation_fquery, validation_freply_true, scramble=scramble)
     def normalize(self, scores, smin=None, smax=None, coefficient=None, smallest_value=0):
         if not smin and not smax:
 	    smin = min(scores)
@@ -223,4 +223,5 @@ if __name__ == '__main__':
     else:
         """train"""
         print("Training")
+        print("hybrid scramble is: " + str(args.scramble))
         hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true, args.scramble)
