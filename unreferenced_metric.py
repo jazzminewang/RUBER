@@ -217,8 +217,10 @@ class Unreferenced():
                     if random.randint(0, 4) == 1:
                         random_divisor = random.randint(1, 4)
                         new_word = word / random_divisor
-                        if word == 0:
+                        if new_word == 0:
                             new_word = word
+                        else:
+                            print("Replaced " + str(word) + " with" + str(new_word)) 
                     else:
                         new_word = word
                     new_sentence.append(new_word)
@@ -269,8 +271,8 @@ class Unreferenced():
         time.sleep(3)
 
         print("Loading query and reply files")
-        self.fquery_lines = open("data/" + fquery + ".vocab30", "r").readlines()
-        self.freply_lines = open("data/" + freply, + ".vocab30", "r").readlines()
+        self.fquery_lines = open("data/" + fquery + ".vocab20", "r").readlines()
+        self.freply_lines = open("data/" + freply + ".vocab30", "r").readlines()
         if generated_responses:
             self.freply_lines_generated = open("data/" + add_neg_file + ".vocab30", "r").readlines()
 
