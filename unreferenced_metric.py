@@ -210,6 +210,7 @@ class Unreferenced():
                 if random.randint(0, 4) == 1:
                     i = random.randint(0, data_size - 1)
                 new_idx.append(i)
+            idx = new_idx
         
         ids = [data[i][1] for i in idx]
         lens = [data[i][0] for i in idx]
@@ -253,10 +254,10 @@ class Unreferenced():
         time.sleep(3)
 
         print("Loading query and reply files")
-        self.fquery_lines = open(fquery, "r").readlines()
-        self.freply_lines = open(freply, "r").readlines()
+        self.fquery_lines = open("data/" + fquery, "r").readlines()
+        self.freply_lines = open("data/" + freply, "r").readlines()
         if generated_responses:
-            self.freply_lines_generated = open(add_neg_file, "r").readlines()
+            self.freply_lines_generated = open("data/" + add_neg_file, "r").readlines()
 
         
         print("First 5 query inputs indices")
@@ -266,9 +267,9 @@ class Unreferenced():
         print("-----")
 
         print("qsizes")
-        print(qsizes)
+        print(query_sizes)
         print("rsizes")
-        print(rsizes)
+        print(reply_sizes)
         print("-----")
 
         print("First query inputs text")
@@ -371,7 +372,7 @@ class Unreferenced():
             prev_losses = [1.0]
             impatience = 0.0
             while True:
-                step, l = self.train_step(queries, replies, fquery, freply, data_size, batch_size, additional_negative_samples_id, add_neg_file=neg_file, scramble)
+                step, l = self.train_step(queries, replies, fquery, freply, data_size, batch_size, additional_negative_samples, add_neg_file=neg_file, scramble=scramble)
                 _, validation_l = self.get_validation_loss(validation_queries, validation_replies,
                                                            len(validation_queries), batch_size)
 
