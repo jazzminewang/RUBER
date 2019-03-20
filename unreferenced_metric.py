@@ -207,9 +207,8 @@ class Unreferenced():
             print(data_size)
            
             idx = [random.randint(0, data_size - 1) for _ in range(batch_size)]
-            print("random ids")
-            print(idx)
         elif scramble:
+            print("scrambling words")
             new_idx = []
             for i in idx: 
                 if random.randint(0, 4) == 1:
@@ -218,6 +217,7 @@ class Unreferenced():
             idx = new_idx
         
         ids = [data[i][1] for i in idx]
+        
         lens = [data[i][0] for i in idx]
         return ids, lens, idx
 
@@ -291,6 +291,8 @@ class Unreferenced():
         print("len of replies batch")
         print(len(replies_batch))
         print(replies_batch)
+        print("first 20 only")
+        print(replies_batch[:20])
         print("-----")
 
         if not generated_responses:
@@ -320,6 +322,8 @@ class Unreferenced():
         print("len of replies batch")
         print(len(negative_replies_batch))
         print(negative_replies_batch)
+        print("first 20 only")
+        print(negative_replies_batch[:20])
         print("-----")
 
         print("First negative reply generated text")
