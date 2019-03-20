@@ -203,6 +203,8 @@ class Unreferenced():
             idx [batch_size]
         """
         if not idx:
+            print("getting random ids from data of length ")
+            print(len(data_size))
             idx = [random.randint(0, data_size - 1) for _ in range(batch_size)]
         elif scramble:
             new_idx = []
@@ -230,7 +232,9 @@ class Unreferenced():
 
     def get_validation_loss(self, queries, replies, data_size, batch_size):
         # data_size = # of queries
+        print("batch size is " + str(batch_size))
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
+        print("getting ids of length __ from replies " + str(len(idx)))
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                                                      batch_size, idx)
         negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
@@ -266,9 +270,9 @@ class Unreferenced():
         print("-----")
 
         print("qsizes")
-        print(qsizes)
+        print(query_sizes)
         print("rsizes")
-        print(rsizes)
+        print(reply_sizes)
         print("-----")
 
         print("First query inputs text")
@@ -279,7 +283,7 @@ class Unreferenced():
         print("-----")
 
         print("First reply inputs text")
-        replies_batch = [self.freply_lines[x] for x in query_batch[0]]
+        replies_batch = [self.freply_lines[x] for x in reply_batch[0]]
         print("len of replies batch")
         print(len(replies_batch))
         print(replies_batch)
@@ -306,14 +310,14 @@ class Unreferenced():
             negative_reply_batch += generated_reply_batch
             neg_reply_sizes += generated_reply_sizes
 
-        print("First negative reply inputs text")
+        print("First negative reply normal/scrambled text")
         negative_replies_batch = [self.freply_lines[x] for x in negative_reply_batch[0]]
         print("len of replies batch")
         print(len(negative_replies_batch))
         print(negative_replies_batch)
         print("-----")
 
-        print("First negative reply inputs text")
+        print("First negative reply generated text")
         negative_replies_batch = [self.freply_lines_generated[x] for x in generated_responses[0]]
         print("len of replies batch")
         print(len(negative_replies_batch))
