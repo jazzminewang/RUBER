@@ -297,6 +297,7 @@ class Unreferenced():
     def train(self, data_dir, fquery, freply, validation_fquery, validation_freply_true, batch_size=128, steps_per_checkpoint=100, scramble=False):
         print("Training with one quarter scrambled: " + str(scramble))
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
+        data_size = len(queries)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
         validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)

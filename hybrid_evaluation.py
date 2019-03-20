@@ -223,4 +223,4 @@ if __name__ == '__main__':
     else:
         """train"""
         print("Training")
-        hybrid.train_unref(data_dir, training_fquery, training_freply, freply_scramble, validation_fquery, validation_freply_true, args.scramble)
+        hybrid.train_unref(data_dir, training_fquery, training_freply, validation_fquery, validation_freply_true, args.scramble)
