@@ -280,7 +280,7 @@ class Unreferenced():
         print("-----")
 
         print("First reply inputs text")
-        replies_batch = [self.freply_lines[x] for x in query_batch[0]]
+        replies_batch = [self.freply_lines[x] for x in reply_batch[0]]
         print("len of replies batch")
         print(len(replies_batch))
         print(replies_batch)
@@ -307,15 +307,15 @@ class Unreferenced():
             negative_reply_batch += generated_reply_batch
             neg_reply_sizes += generated_reply_sizes
 
-        print("First negative reply inputs text")
+        print("First negative reply inputs text negative")
         negative_replies_batch = [self.freply_lines[x] for x in negative_reply_batch[0]]
         print("len of replies batch")
         print(len(negative_replies_batch))
         print(negative_replies_batch)
         print("-----")
 
-        print("First negative reply inputs text")
-        negative_replies_batch = [self.freply_lines_generated[x] for x in generated_responses[0]]
+        print("First negative reply inputs text generated")
+        negative_replies_batch = [self.freply_lines_generated[x] for x in generated_reply_batch[0]]
         print("len of replies batch")
         print(len(negative_replies_batch))
         print(negative_replies_batch)
