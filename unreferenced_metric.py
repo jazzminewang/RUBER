@@ -287,12 +287,20 @@ class Unreferenced():
         print("-----")
 
         if not generated_responses:
-            negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
-                data_size, batch_size, idx, scramble)
+            if scramble:
+                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                    data_size, batch_size, idx, scramble)
+            else:
+                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                    data_size, batch_size)
         else:
             half = len(idx)/2
-            negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
-                data_size, batch_size/2, idx[:half], scramble)
+            if scramble:
+                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                    data_size, batch_size/2, idx[:half], scramble)
+            else:
+                negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
+                    data_size, batch_size/2)
             # Add noisy responses from HRED models for half of the dataset
             generated_reply_batch, generated_reply_sizes, _ = self.get_batch(generated_responses,
                     data_size, batch_size / 2, idx[half:])
