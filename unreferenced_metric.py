@@ -203,12 +203,13 @@ class Unreferenced():
             idx [batch_size]
         """
         if not idx:
+            print("no ids, randomly getting ids")
             idx = [random.randint(0, data_size - 1) for _ in range(batch_size)]
         
         ids = [data[i][1] for i in idx]
         if scramble:
             print("Scrambling words")
-            new_idx = []
+            new_ids = []
             for sentence in ids:
                 new_sentence = []
                 for word in sentence:
@@ -216,9 +217,12 @@ class Unreferenced():
                         random_divisor = random.randint(0, 4)
                         new_word = word / random_divisor
                         if word == 0:
-                            new_word = words
+                            new_word = word
+                    else:
+                        new_word = word
                     new_sentence.append(new_word)
-                new_idx.append(new_sentence)
+                new_ids.append(new_sentence)
+            ids = new_ids
                             
         lens = [data[i][0] for i in idx]
         return ids, lens, idx
@@ -300,7 +304,7 @@ class Unreferenced():
                     data_size, batch_size/2)
             # Add noisy responses from HRED models for half of the dataset
             generated_reply_batch, generated_reply_sizes, _ = self.get_batch(generated_responses,
-                    data_size, batch_size / 2, idx[half:])
+                    len(generated_responses), batch_size / 2)
             negative_reply_batch_half = negative_reply_batch
             negative_reply_batch += generated_reply_batch
             neg_reply_sizes += generated_reply_sizes
