@@ -330,7 +330,7 @@ class Unreferenced():
             prev_losses = [1.0]
             impatience = 0.0
             while True:
-                step, l = self.train_step(queries, replies, scramble_replies, data_size, batch_size, additional_negative_samples)
+                step, l = self.train_step(queries, replies, data_size, batch_size, additional_negative_samples, scramble)
                 _, validation_l = self.get_validation_loss(validation_queries, validation_replies,
                                                            len(validation_queries), batch_size)
 
