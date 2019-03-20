@@ -24,11 +24,10 @@ def get_mlp(input_dim, output_dim, num_layers=2, dropout=0.0):
     )
 
 class BiRNNEmbedding(nn.Module):
-    def __init__(self, input_dim, output_dim, fembed, num_layers=2, num_words=10, num_dim=100, pooling=None):
+    def __init__(self, input_dim, output_dim, num_layers=2, num_words=10, num_dim=100, pooling=None):
         super(BiRNNEmbedding, self).__init__()
-        self.embedding = nn.Embedding(fembed)
+        self.embedding = nn.Embedding(num_words, num_dim)
         torch.nn.init.xavier_uniform_(self.embedding.weight)
-
         self.rnn = nn.GRU(input_dim, output_dim,num_layers=num_layers, bidirectional=True, batch_first=True)
         self.pooling = None
         
@@ -45,8 +44,6 @@ class BiRNNEmbedding(nn.Module):
         outp = outp[:,-1,:]
         
         return outp
-
-    # do I need a train method here?
 
 class UnreferencedMetric(nn.Module):
     def __init__(self, qmax_length,
@@ -119,8 +116,30 @@ class UnreferencedMetric(nn.Module):
         # out = B x 1
         return out
 
-    
-    def train(args, model, device, train_loader, optimizer, epoch):
+    def get_batch(self, data, data_size, batch_size, idx=None):
+        """
+        Get a random batch with size batch_size
+
+        Args:
+            data: [[length, [ids]], each with a line of segmented sentence
+            data_size: size of data
+            batch_size: returned batch size
+            idx: [batch_size], randomly get batch if idx None, or get with idx
+
+        Return:
+            batched vectors [batch_size, max_length]
+            sequence length [batch_size]
+            idx [batch_size]
+        """
+        if not idx:
+            idx=[random.randint(0, data_size-1) for _ in range(batch_size)]
+        ids = [data[i][1] for i in idx]
+        lens = [data[i][0] for i in idx]
+        return ids, lens, idx
+
+    #TODO: how to train w batches? do I need to make a custom data loader?
+
+    def train(self, args, model, device, train_loader, optimizer, epoch):
         model.train()
         for batch_idx, (data, target) in enumerate(train_loader):
             data, target = data.to(device), target.to(device)
@@ -133,7 +152,38 @@ class UnreferencedMetric(nn.Module):
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, batch_idx * len(data), len(train_loader.dataset),
                         100. * batch_idx / len(train_loader), loss.item()))
-
+        
+        # Save model after specified # epochs
+        torch.save(model.state_dict(), PATH)
     
+    def scores(self, data_dir, fquery, freply, fqvocab, frvocab, checkpoint_dir, init=False):
+        # to do - how to init model?
+        if not model:
+           # model = UnreferencedMetric(??)
+           model.load_state_dict(torch.load(PATH))
+        model.eval()
+        queries = data_helpers.load_file(data_dir, fquery)
+        replies = data_helpers.load_file(data_dir, freply)
+	    data_size = len(queries)
+
+        qvocab = data_helpers.load_vocab(data_dir, fqvocab)
+        rvocab = data_helpers.load_vocab(data_dir, frvocab)
+        scores=[]
+
+        with torch.no_grad():
+            for query, reply in zip(queries, replies):
+                ql, qids = data_helpers.transform_to_id(qvocab, query,
+                        self.qmax_length)
+                rl, rids = data_helpers.transform_to_id(rvocab, reply,
+                        self.rmax_length)
+                
+                #TODO: what is the logic here to run inference?
+
+                output = model(data) # how to pass in this data?
+                scores.append(score[0])
+
+
+
+
     # TODO: add this to hybrid
     # um = UnreferencedMetric(10,10,None,None,2,2,emb_dim=10, vocab_size=10)
