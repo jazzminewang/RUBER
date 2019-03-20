@@ -203,6 +203,11 @@ class Unreferenced():
         """
         if not idx:
             idx = [random.randint(0, data_size - 1) for _ in range(batch_size)]
+        print("len of data")
+        print(len(data))
+        print("ids")
+        print(idx)
+        
         ids = [data[i][1] for i in idx]
         lens = [data[i][0] for i in idx]
         return ids, lens, idx
@@ -271,14 +276,17 @@ class Unreferenced():
             generated_reply_batch, generated_reply_sizes, _ = self.get_batch(replies,
                     data_size, batch_size / 2)
             negative_reply_batch += generated_reply_batch
-        
             neg_reply_sizes += generated_reply_sizes
+        print("Getting feed dict")
+       
 
         # compute sample loss and do optimize
         feed_dict = self.make_input_feed(query_batch, query_sizes,
                                          reply_batch, reply_sizes, negative_reply_batch, neg_reply_sizes)
 
+        print("before output feed")
         output_feed = [self.global_step, self.train_op, self.loss]
+        print("before running session")
         step, _, loss = self.session.run(output_feed, feed_dict)
         #
 
