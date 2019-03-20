@@ -294,20 +294,12 @@ class Unreferenced():
             print ('Initializing model variables')
             self.session.run(tf.global_variables_initializer())
 
-    def train(self, data_dir, fquery, freply, scramble_replies, validation_fquery, validation_freply_true, batch_size=128, steps_per_checkpoint=100):
-        print("batch size is : ")
-        print(batch_size)
+    def train(self, data_dir, fquery, freply, validation_fquery, validation_freply_true, batch_size=128, steps_per_checkpoint=100, scramble=False):
+        print("Training with one quarter scrambled: " + str(scramble))
         queries = data_helpers.load_data(data_dir, fquery, self.qmax_length)
         replies = data_helpers.load_data(data_dir, freply, self.rmax_length)
-        print("length of replies")
-        print(len(replies))
-        data_size = len(queries)
         validation_queries = data_helpers.load_data(data_dir, validation_fquery, self.qmax_length)
         validation_replies = data_helpers.load_data(data_dir, validation_freply_true, self.rmax_length)
-        if scramble_replies != '':
-            scramble_replies = data_helpers.load_data(data_dir, scramble_replies, self.rmax_length)
-            print("length of scramble replies")
-            print(len(scramble_replies))
 	print("Writing validation + loss to " + self.train_dir)
         if self.additional_negative_samples:
             print("Adding additional samples")
