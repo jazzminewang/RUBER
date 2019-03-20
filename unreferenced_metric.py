@@ -208,6 +208,8 @@ class Unreferenced():
         ids = [data[i][1] for i in idx]
         if scramble:
             print("Scrambling words")
+            print("Before scrambling, first id index was: ")
+            print(ids[0])
             new_ids = []
             for sentence in ids:
                 new_sentence = []
@@ -267,10 +269,10 @@ class Unreferenced():
         time.sleep(3)
 
         print("Loading query and reply files")
-        self.fquery_lines = open("data/" + fquery, "r").readlines()
-        self.freply_lines = open("data/" + freply, "r").readlines()
+        self.fquery_lines = open("data/" + fquery + ".vocab30", "r").readlines()
+        self.freply_lines = open("data/" + freply, + ".vocab30", "r").readlines()
         if generated_responses:
-            self.freply_lines_generated = open("data/" + add_neg_file, "r").readlines()
+            self.freply_lines_generated = open("data/" + add_neg_file + ".vocab30", "r").readlines()
 
     
         print("First query inputs text")
