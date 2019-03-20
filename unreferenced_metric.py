@@ -203,7 +203,6 @@ class Unreferenced():
             idx [batch_size]
         """
         if not idx:
-            print("no ids, randomly getting ids")
             idx = [random.randint(0, data_size - 1) for _ in range(batch_size)]
         
         ids = [data[i][1] for i in idx]
@@ -214,7 +213,7 @@ class Unreferenced():
                 new_sentence = []
                 for word in sentence:
                     if random.randint(0, 4) == 1:
-                        random_divisor = random.randint(0, 4)
+                        random_divisor = random.randint(1, 4)
                         new_word = word / random_divisor
                         if word == 0:
                             new_word = word
@@ -223,7 +222,10 @@ class Unreferenced():
                     new_sentence.append(new_word)
                 new_ids.append(new_sentence)
             ids = new_ids
-                            
+        print("example first id index")
+        print(ids[0])
+        print("example second id index")
+        print(ids[1])                   
         lens = [data[i][0] for i in idx]
         return ids, lens, idx
 
@@ -242,9 +244,7 @@ class Unreferenced():
 
     def get_validation_loss(self, queries, replies, data_size, batch_size):
         # data_size = # of queries
-        print("batch size is " + str(batch_size))
         query_batch, query_sizes, idx = self.get_batch(queries, data_size, batch_size)
-        print("getting ids of length __ from replies " + str(len(idx)))
         reply_batch, reply_sizes, _ = self.get_batch(replies, data_size,
                                                      batch_size, idx)
         negative_reply_batch, neg_reply_sizes, _ = self.get_batch(replies,
@@ -275,15 +275,11 @@ class Unreferenced():
     
         print("First query inputs text")
         queries_batch = [self.fquery_lines[x] for x in query_batch[0]]
-        print("len of queries batch")
-        print(len(queries_batch))
         print(queries_batch)
         print("-----")
 
-        print("First reply inputs text")
+        print("First positive reply inputs text")
         replies_batch = [self.freply_lines[x] for x in reply_batch[0]]
-        print("len of replies batch")
-        print(len(replies_batch))
         print(replies_batch)
         print("-----")
 
